@@ -53,17 +53,22 @@ def divide_list(lst: list, nfiles: int = 20) -> list:
 
 
 def get_dataset_config(year):
+    nano_version = "v12"
+    if year == "2024":
+        nano_version = "v15"
+
     aux_year_map = {
         "2022": "2022preEE",
         "2023": "2023preBPix",
     }
     aux_year = aux_year_map.get(year, year)
-    fileset_path = Path.cwd() / "analysis" / "filesets"
-    fileset_file = f"{fileset_path}/{aux_year}_nanov12.yaml"
+
+    fileset_file = (
+        Path.cwd() / "analysis" / "filesets" / f"{aux_year}_nano{nano_version}.yaml"
+    )
     with open(fileset_file, "r") as f:
         dataset_config = yaml.safe_load(f)
     return dataset_config
-
 
 def get_dataset_name(dataset):
     datasets = ["MuonEG", "Muon", "EGamma", "SingleMuon", "DoubleMuon"]

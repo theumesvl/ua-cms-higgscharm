@@ -3,11 +3,12 @@ import yaml
 import json
 import argparse
 from pathlib import Path
+from analysis.filesets.utils import get_dataset_config
 from coffea.dataset_tools.dataset_query import DataDiscoveryCLI
 
 
 if __name__ == "__main__":
-    years = ["2022preEE", "2022postEE", "2023preBPix", "2023postBPix"]
+    years = ["2022preEE", "2022postEE", "2023preBPix", "2023postBPix", "2024"]
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--year",
@@ -24,10 +25,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # open dataset configs
-    filesets_dir = Path.cwd() / "analysis" / "filesets"
-    datasets_dir = filesets_dir / f"{args.year}_nanov12.yaml"
-    with open(datasets_dir, "r") as f:
-        dataset_configs = yaml.safe_load(f)
+    dataset_configs = get_dataset_config(args.year)
 
     # read dataset queries
     if args.samples:
@@ -41,7 +39,7 @@ if __name__ == "__main__":
             das_queries[sample] = query
         else:
             print(f"No available query for: {sample}")
-            
+
     # create a dataset_definition dict for each yeare
     dataset_definition = {}
     for dataset_key, query in das_queries.items():
@@ -49,6 +47,7 @@ if __name__ == "__main__":
     # the dataset definition is passed to a DataDiscoveryCLI
     ddc = DataDiscoveryCLI()
     # set the allow sites to look for replicas
+    filesets_dir = Path.cwd() / "analysis" / "filesets"
     sites_file = filesets_dir / f"{args.year}_sites.yaml"
     with open(sites_file, "r") as f:
         sites = yaml.safe_load(f)["white"]

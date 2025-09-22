@@ -6,10 +6,11 @@ from pathlib import Path
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
+        "-y",
         "--year",
         dest="year",
         type=str,
-        choices=["2022preEE", "2022postEE", "2023preBPix", "2023postBPix"],
+        choices=["2022preEE", "2022postEE", "2023preBPix", "2023postBPix", "2024"],
     )
     parser.add_argument(
         "--image",
@@ -38,5 +39,5 @@ if __name__ == "__main__":
         subprocess.run(cmd, shell=True)
 
     samples_str = " ".join(args.samples) if args.samples else ""
-    cmd = f"singularity exec -B /afs -B /cvmfs {args.image} python3 analysis/filesets/make_filesets.py --year {args.year} --samples {samples_str}"
+    cmd = f"singularity exec -B /afs -B /cvmfs {args.image} python3 -m analysis.filesets.make_filesets --year {args.year} --samples {samples_str}"
     subprocess.run(cmd, shell=True)
