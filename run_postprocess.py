@@ -260,9 +260,10 @@ if __name__ == "__main__":
 
         output_files = [
             f
-            for f in glob.glob(f"{output_dir}/*/*.coffea", recursive=True)
+            for f in glob.glob(f"{output_dir}/*/*.coffea", recursive=False)
             if not Path(f).stem.startswith("cutflow")
             and not Path(f).stem.startswith("processed")
+            and not Path(f).stem.startswith("combined")
         ]
 
         grouped_outputs = defaultdict(list)
@@ -302,15 +303,7 @@ if __name__ == "__main__":
             )
             gc.collect()
 
-        # Generate filelists for MVA training (hww workflow only)
-        if args.mva:
-            generate_all_filelists(output_dir, categories, list(process_samples_map.keys()))
 
-        processed_histograms = load_processed_histograms(
-            args.year,
-            output_dir,
-            process_samples_map,
-        )
 
         for category in categories:
             logging.info(f"category: {category}")
@@ -380,6 +373,15 @@ if __name__ == "__main__":
                 latex_table = df_to_latex(results_df, args.blind)
                 with open(category_dir / f"results_{category}.txt", "w") as f:
                     f.write(latex_table)
+        # Generate filelists for MVA training (hww workflow only) -> here postprocessing needs to be done already
+    if args.mva:
+        generate_all_filelists(output_dir, categories, list(process_samples_map.keys()))
+
+    processed_histograms = load_processed_histograms(
+        args.year,
+        output_dir,
+        process_samples_map,
+    )
 
     if args.year in ["2022", "2023"]:
         if args.postprocess:
@@ -543,3 +545,4 @@ if __name__ == "__main__":
                 f"tar -zcvf {output_dir}/{category}/{args.workflow}_{args.year}_plots.tar.gz {output_dir}/{category}/*.{args.extension}",
                 shell=True,
             )
+

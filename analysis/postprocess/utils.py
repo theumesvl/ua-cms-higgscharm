@@ -20,18 +20,19 @@ from analysis.filesets.utils import get_dataset_config
 # =============================================================================
 # Process groups for multi-class MVA classification
 # Maps process names (from fileset) to group names for one-hot encoding
+# commented out the processes that are not used in hww, but are in the hzz analysis
 PROCESS_TO_GROUP = {
     # Higgs (signal + background combined)
-    "H+c": "higgs",
-    "H+b": "higgs",
-    "ggH": "higgs",
-    "VBF": "higgs",
-    "ZH": "higgs",
-    "ggZH": "higgs",
-    "WH": "higgs",
-    "ttHnonBB": "higgs",
-    "ttHtoBB": "higgs",
-    "H(125)": "higgs",
+    "H+c": "hplusc",
+    "H+b": "higgsbkg",
+    "ggH": "higgsbkg",
+    "VBF": "higgsbkg",
+    "ZH": "higgsbkg",
+    "ggZH": "higgsbkg",
+    "WH": "higgsbkg",
+    "ttHnonBB": "higgsbkg",
+    "ttHtoBB": "higgsbkg",
+    #"H(125)": "higgsbkg",
     # Top pair
     "tt": "tt",
     # Single top
@@ -40,9 +41,10 @@ PROCESS_TO_GROUP = {
     "WW": "diboson",
     "WZ": "diboson",
     "ZZ": "diboson",
-    "qqToZZ": "diboson",
-    "ggToZZ": "diboson",
-    #"WG": "diboson",
+    "Diboson": "diboson",
+    #"qqToZZ": "diboson",
+    #"ggToZZ": "diboson",
+    "WG": "diboson",
     #"EW": "diboson",
     # V+jets (DY + W+jets)
     "DY+Jets": "vjets",
@@ -50,9 +52,9 @@ PROCESS_TO_GROUP = {
 }
 
 # Single source of truth for process group names and their order.
-# One-hot columns (is_higgs, is_tt, ...) are derived from this list.
+# One-hot columns (is_higgsbkg, is_tt, ...) are derived from this list.
 # Must match b-hive config truths order (config/HPlusCHToWW_multiclass.yml).
-PROCESS_GROUPS = ["higgs", "tt", "st", "diboson", "vjets"]
+PROCESS_GROUPS = ["higgsbkg", "hplusc", "tt", "st", "diboson", "vjets"]
 PROCESS_GROUP_IDS = {name: i for i, name in enumerate(PROCESS_GROUPS)}
 # =============================================================================
 
@@ -283,7 +285,7 @@ def merge_parquets_by_sample(output_dir, year, categories):
             if len(subfolders) != 0:
                 logging.info(
                     f"Merging {name} outputs into {len(subfolders)} "
-                    f"{'partition' if len(subfolders) == 1 else 'partitions'}"
+                    f"{'partition' if len(subfolders) == 1 else 'partitions'} stored in parquets_{name}/{category}"
                 )
                 for i, subfolder in enumerate(subfolders, start=1):
                     inpath = f"{subfolder}/{category}"
@@ -319,7 +321,7 @@ def load_processed_histograms(
 ):
     processed_histograms = {}
     for process in process_samples_map:
-        processed_histograms.update(load(f"{output_dir}/{process}.coffea"))
+        processed_histograms.update(load(f"{output_dir}/combined_{process}.coffea"))
     save(processed_histograms, f"{output_dir}/{year}_processed_histograms.coffea")
     return processed_histograms
 
@@ -556,11 +558,13 @@ def generate_filelist(output_dir: Path, category: str, process_names: list, file
     Path
         Path to the generated filelist, or None if no files found
     """
-    parquet_files = sorted(
-        output_dir / f"{process}.parquet"
-        for process in process_names
-        if (output_dir / f"{process}.parquet").exists()
-    )
+    parquet_files = []
+    
+    for process in process_names:
+        parquet_file = output_dir / category / f"combined_{process}.parquet"
+    
+        if parquet_file.exists():
+            parquet_files.append(parquet_file)
     if not parquet_files:
         logging.warning(f"No process-level parquet files found in {output_dir}")
         return None
@@ -575,7 +579,8 @@ def generate_filelist(output_dir: Path, category: str, process_names: list, file
 
     with open(filelist_path, "w") as f:
         for pf in parquet_files:
-            f.write(f"{pf}\n")
+            if str(pf).split("/")[-1] != "combined_Data.parquet":
+                f.write(f"{pf}\n")
 
     logging.info(f"Generated filelist: {filelist_path} ({len(parquet_files)} files)")
     return filelist_path
@@ -606,3 +611,4 @@ def generate_all_filelists(output_dir: Path, categories: list, process_names: li
         if filelist_path:
             filelists[category] = filelist_path
     return filelists
+
