@@ -51,6 +51,13 @@ correction_files = {
         "2023postBPix": "/cvmfs/cms-griddata.cern.ch/cat/metadata/MUO/Run3-23DSep23-Summer23BPix-NanoAODv12/2025-08-14/muon_scalesmearing.json.gz",
         "2024": "/cvmfs/cms-griddata.cern.ch/cat/metadata/MUO/Run3-24CDEReprocessingFGHIPrompt-Summer24-NanoAODv15/2025-10-17/muon_scalesmearing.json.gz",
     },
+    "muon_HWW": {
+        "2022preEE": f"{Path.cwd()}/analysis/data/muon_HWW/2022preEE_muonSF_latinos_HWW.json",
+        "2022postEE": f"{Path.cwd()}/analysis/data/muon_HWW/2022postEE_muonSF_latinos_HWW.json",
+        "2023preBPix": f"{Path.cwd()}/analysis/data/muon_HWW/2023preBPix_muonSF_latinos_HWW.json",
+        "2023postBPix": f"{Path.cwd()}/analysis/data/muon_HWW/2023postBPix_muonSF_latinos_HWW.json",
+        "2024": f"{Path.cwd()}/analysis/data/muon_HWW/2024_muonSF_latinos_HWW.json",
+    },
     "electron_id": {
         "2016preVFP": "/cvmfs/cms-griddata.cern.ch/cat/metadata/EGM/Run2-2016preVFP-UL-NanoAODv9/2024-07-02/electron.json.gz",
         "2016postVFP": "/cvmfs/cms-griddata.cern.ch/cat/metadata/EGM/Run2-2016postVFP-UL-NanoAODv9/2024-07-02/electron.json.gz",
@@ -102,6 +109,13 @@ correction_files = {
         "2023postBPix": "/cvmfs/cms-griddata.cern.ch/cat/metadata/EGM/Run3-23DSep23-Summer23BPix-NanoAODv12/latest/electronSS_EtDependent.json.gz",
         "2024": "/cvmfs/cms-griddata.cern.ch/cat/metadata/EGM/Run3-24CDEReprocessingFGHIPrompt-Summer24-NanoAODv15/latest/electronSS_EtDependent.json.gz",
     },
+    "electron_HWW": {
+        "2022preEE": f"{Path.cwd()}/analysis/data/electron_HWW/2022preEE_electron.json",
+        "2022postEE": f"{Path.cwd()}/analysis/data/electron_HWW/2022postEE_electron.json",
+        "2023preBPix": f"{Path.cwd()}/analysis/data/electron_HWW/2023preBPix_electron.json",
+        "2023postBPix": f"{Path.cwd()}/analysis/data/electron_HWW/2023postBPix_electron.json",
+        "2024": f"{Path.cwd()}/analysis/data/electron_HWW/2024_electron.json",
+    },
     "jetvetomaps": {
         "2016preVFP": "/cvmfs/cms-griddata.cern.ch/cat/metadata/JME/Run2-2016preVFP-UL-NanoAODv9/2025-04-11/jetvetomaps.json.gz",
         "2016postVFP": "/cvmfs/cms-griddata.cern.ch/cat/metadata/JME/Run2-2016postVFP-UL-NanoAODv9/2025-04-11/jetvetomaps.json.gz",
@@ -143,3 +157,4 @@ def unflat_sf(sf: ak.Array, in_limit_mask: ak.Array, n: ak.Array):
     """
     sf = ak.where(in_limit_mask, sf, ak.ones_like(sf))
     return ak.fill_none(ak.prod(ak.unflatten(sf, n), axis=1), value=1)
+

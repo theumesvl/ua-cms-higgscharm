@@ -16,13 +16,22 @@ from analysis.selections import (
     select_candidate_mass,
     select_candidate_cjet_dphi,
 )
+from analysis.selections.event_selections import get_muon_tthMVA_cached
 
 
 class ObjectSelector:
 
-    def __init__(self, object_selection_config, year):
+    def __init__(
+        self,
+        object_selection_config,
+        year,
+        dataset,
+        filename,
+    ):
         self.object_selection_config = object_selection_config
         self.year = year
+        self.dataset = dataset
+        self.filename = filename
 
     def select_objects(self, events):
         self.objects = {}
@@ -648,3 +657,25 @@ class ObjectSelector:
         self.objects["delta_R_ll_c"]= (
             ll_pair.delta_r(cjet)
         )
+
+    def select_muons(self, obj_name):
+        "expands the Muon events with the retrained MVA scores if necessary and asked"
+        if self.year in ['2022preEE', '2022postEE', '2023preBPix', '2023postBPix']:
+            tth_scores = get_muon_tthMVA_cached(
+                self.events,
+                self.year,
+                self.dataset,
+                self.filename,
+            )
+
+            self.events.Muon = ak.with_field(
+                self.events.Muon,
+                tth_scores,
+                "tthMVA"
+            )
+        else:
+            print(
+                f"Input year is '{self.year}', but the re-evaluation of the tthMVA score for Run 3 only needs to be done for 2022preEE, 2022postEE, 2023preBPix and 2023postBPix. No retrained tthMVA score added"
+            )
+
+        self.objects[obj_name] = self.events.Muon

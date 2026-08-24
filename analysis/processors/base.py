@@ -86,6 +86,7 @@ class BaseProcessor(processor.ProcessorABC):
     def process(self, events):
         year = self.year
         dataset = events.metadata["dataset"]
+        filename = events.metadata["filename"]
 
         object_selections = self.workflow_config.object_selection
         event_selection = self.workflow_config.event_selection
@@ -121,7 +122,7 @@ class BaseProcessor(processor.ProcessorABC):
         # --------------------------------------------------------------
         # Object selection
         # --------------------------------------------------------------
-        object_selector = ObjectSelector(object_selections, year)
+        object_selector = ObjectSelector(object_selections, year, dataset, filename)
         objects = object_selector.select_objects(events)
 
         # --------------------------------------------------------------

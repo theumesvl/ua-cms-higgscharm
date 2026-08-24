@@ -113,6 +113,13 @@ def weight_manager(pruned_ev, year, dataset, workflow_config, variation="nominal
                                 id_wp=weights_config["muon"]["id"],
                                 iso_wp=weights_config["muon"]["iso"],
                             )
+                    if "promptMVA" in weights_config["muon"]:
+                        if weights_config["muon"]["promptMVA"]:
+                            muon_weights.add_promptMVA_weights(
+                                id_wp=weights_config["muon"]["id"],
+                                iso_wp=weights_config["muon"]["iso"],
+                                promptMVA_wp=weights_config["muon"]["promptMVA"],
+                            )
                     if "trigger" in weights_config["muon"]:
                         if weights_config["muon"]["trigger"]:
                             muon_weights.add_trigger_weights(
@@ -134,6 +141,12 @@ def weight_manager(pruned_ev, year, dataset, workflow_config, variation="nominal
                         if weights_config["electron"]["id"]:
                             electron_weights.add_id_weights(
                                 id_wp=weights_config["electron"]["id"]
+                            )
+                    if "promptMVA" in weights_config["electron"]:
+                        if weights_config["electron"]["promptMVA"]:
+                            electron_weights.add_promptMVA_weights(
+                                id_wp=weights_config["electron"]["id"],
+                                promptMVA_wp=weights_config["electron"]["promptMVA"]
                             )
                     if "reco" in weights_config["electron"]:
                         if weights_config["electron"]["reco"]:
@@ -175,3 +188,4 @@ def weight_manager(pruned_ev, year, dataset, workflow_config, variation="nominal
     else:
         weights_container.add("weight", np.ones(len(pruned_ev)))
     return weights_container
+

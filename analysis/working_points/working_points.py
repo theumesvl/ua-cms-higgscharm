@@ -21,11 +21,11 @@ class WorkingPoints:
                 if hasattr(events.Electron, "mvaFall17V2Iso_WP90")
                 else events.Electron.mvaIso_WP90
             ),
-            "fail": events.Electron.cutBased == 0,
-            "veto": events.Electron.cutBased == 1,
-            "loose": events.Electron.cutBased == 2,
-            "medium": events.Electron.cutBased == 3,
-            "tight": events.Electron.cutBased == 4,
+            "Fail": events.Electron.cutBased >= 0,
+            "Veto": events.Electron.cutBased >= 1,
+            "Loose": events.Electron.cutBased >= 2,
+            "Medium": events.Electron.cutBased >= 3,
+            "Tight": events.Electron.cutBased >= 4,
         }
 
         # add electron BDT ID wp
@@ -84,6 +84,48 @@ class WorkingPoints:
 
         return wps[wp]
 
+    def electron_promptMVA(self, events, wp):
+        wps = {
+            "ttHMVA_Run3": (
+                (events.Electron.mvaTTH > 0.5)
+                & (
+                    ((np.abs(events.Electron.eta) <= 1.479) & (np.abs(events.Electron.dxy) < 0.05))
+                    |
+                    ((np.abs(events.Electron.eta) > 1.479) & (np.abs(events.Electron.dxy) < 0.1))
+                )
+                & (
+                    ((np.abs(events.Electron.eta) <= 1.479) & (np.abs(events.Electron.dz) < 0.1))
+                    |
+                    ((np.abs(events.Electron.eta) > 1.479) & (np.abs(events.Electron.dz) < 0.2))
+                )
+                & (events.Electron.convVeto == True)
+            ),
+            "ttHMVA_HWW": (
+                (
+                    ((events.Electron.pt <= 20) & (events.Electron.mvaTTH > 0.35))
+                    |
+                    ((events.Electron.pt > 20) & (events.Electron.mvaTTH > 0.90))
+                )
+                & (
+                    ((np.abs(events.Electron.eta) <= 1.479) & (np.abs(events.Electron.dxy) < 0.05))
+                    |
+                    ((np.abs(events.Electron.eta) > 1.479) & (np.abs(events.Electron.dxy) < 0.1))
+                )
+                & (
+                    ((np.abs(events.Electron.eta) <= 1.479) & (np.abs(events.Electron.dz) < 0.1))
+                    |
+                    ((np.abs(events.Electron.eta) > 1.479) & (np.abs(events.Electron.dz) < 0.2))
+                )
+                & (events.Electron.convVeto == True)
+            ),
+        }
+        if wp not in wps:
+            raise ValueError(
+                f"Invalid value {wp} for electron ID working point. Please specify {list(wps.keys())}"
+            )
+
+        return wps[wp]
+
     # -----------------------------------------------------------------
     # Muons
     # -----------------------------------------------------------------
@@ -92,6 +134,17 @@ class WorkingPoints:
             "loose": events.Muon.looseId,
             "medium": events.Muon.mediumId,
             "tight": events.Muon.tightId,
+            "tight_HWW": ( 
+                (events.Muon.pt > 10) 
+                & (np.abs(events.Muon.eta) < 2.4)
+                & (events.Muon.tightId)
+                & (np.abs(events.Muon.dz) < 0.1)
+                & (
+                    ((events.Muon.pt < 20) & (np.abs(events.Muon.dxy) < 0.01))
+                    |
+                    ((events.Muon.pt >= 20) & (np.abs(events.Muon.dxy) < 0.02))
+                )
+            ),
         }
         if wp not in wps:
             raise ValueError(
@@ -116,11 +169,32 @@ class WorkingPoints:
                 if hasattr(events.Muon, "pfRelIso04_all")
                 else events.Muon.pfRelIso03_all < 0.15
             ),
+            "tight_HWW": (
+                events.Muon.pfRelIso04_all < 0.15
+                if hasattr(events.Muon, "pfRelIso04_all")
+                else events.Muon.pfRelIso03_all < 0.15
+            ),
         }
         if wp not in wps:
             raise ValueError(
                 f"Invalid value {wp} for muon ISO working point. Please specify {list(wps.keys())}"
             )
+        return wps[wp]
+
+    def muon_promptMVA(self, events, year, wp):
+        if year in ['2016preVFP', '2016postVFP', '2017', '2018']:
+            wps = {
+                "tight_HWW":  events.Muon.mvaTTH > 0.67, # this value to use as a cut is not verified
+            }
+        elif year in ['2022preEE', '2022postEE', '2023preBPix', '2023postBPix']:
+            wps = {
+                "tight_HWW":  events.Muon.tthMVA > 0.67, 
+            }
+        else:
+            # for other years in run 3 starting from 2024, using nanoAODv15 -> for other versions, check whether promptMVA is available (replaces tthMVA from Run 2)
+            wps = {
+                "tight_HWW":  events.Muon.promptMVA > 0.67, # this value to use as a cut is not verified
+            }            
         return wps[wp]
 
     # -----------------------------------------------------------------

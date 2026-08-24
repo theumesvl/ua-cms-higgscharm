@@ -49,6 +49,9 @@ class ElectronWeights:
         self.cset_id = correctionlib.CorrectionSet.from_file(
             correction_files["electron_id"][year]
         )
+        self.cset_promptMVA = correctionlib.CorrectionSet.from_file(
+            correction_files["electron_HWW"][year]
+        )
         self.cset_reco = correctionlib.CorrectionSet.from_file(
             correction_files["electron_reco"][year]
         )
@@ -76,6 +79,36 @@ class ElectronWeights:
         else:
             self.weights.add(
                 name=f"CMS_eff_e_id_{self.year[:4]}",
+                weight=nominal_weights,
+            )
+            
+    def add_promptMVA_weights(self, id_wp, promptMVA_wp):
+        """
+        add electron promptMVA weights to weights container
+        """
+        if self.nano_version == "12":
+            nominal_weights = self.get_promptMVA_weights_run3(variation="sf", id_wp=id_wp, promptMVA_wp = promptMVA_wp)
+            up_weights = self.get_promptMVA_weights_run3(variation="sfup", id_wp=id_wp, promptMVA_wp = promptMVA_wp)
+            down_weights = self.get_promptMVA_weights_run3(variation="sfdown", id_wp=id_wp, promptMVA_wp = promptMVA_wp)
+        elif self.nano_version == "9":
+            raise ValueError(
+                f"No scale factors provided for nano version '{nano_version} / run 2' for promptMVA working points."
+            )
+        elif self.nano_version == "15":
+            raise ValueError(
+                f"No scale factors provided for nano version '{nano_version} / 2024 and beyond' for promptMVA working points."
+            )
+        if self.variation == "nominal":
+            # add scale factors to weights container
+            self.weights.add(
+                name=f"CMS_eff_e_promptMVA_{self.year[:4]}",
+                weight=nominal_weights,
+                weightUp=up_weights,
+                weightDown=down_weights,
+            )
+        else:
+            self.weights.add(
+                name=f"CMS_eff_e_promptMVA_{self.year[:4]}",
                 weight=nominal_weights,
             )
 
@@ -184,6 +217,121 @@ class ElectronWeights:
             cset_args += [electron_phi]
         weights = unflat_sf(
             self.cset_id["Electron-ID-SF"].evaluate(*cset_args),
+            in_electron_mask,
+            self.electrons_counts,
+        )
+        return weights
+    
+    def get_promptMVA_weights_run3(self, variation, id_wp, promptMVA_wp):
+        """Compute electron promptMVA weights for Run3 datasets"""
+        # zeroth level: nano version, first level: promptMVA WP, second level: ID wp
+        promptMVA_corrections = {
+            "9": {
+                "ttHMVA_Run3": {
+                    "wp80iso": None,
+                    "wp90iso": None,
+                    "Fail": None,
+                    "Veto": None,
+                    "Loose": None,
+                    "Medium": None,
+                    "Tight": None,
+                },
+                "ttHMVA_HWW": {
+                    "wp80iso": None,
+                    "wp90iso": None,
+                    "Fail": None,
+                    "Veto": None,
+                    "Loose": None,
+                    "Medium": None,
+                    "Tight": None,
+                },
+            },
+            "12": {
+                "ttHMVA_Run3": {
+                    "wp80iso": None,
+                    "wp90iso": None,
+                    "Fail": None,
+                    "Veto": None,
+                    "Loose": None,
+                    "Medium": "cut_MediumID_tthMVA_Run3",
+                    "Tight": None,
+                },
+                "ttHMVA_HWW": {
+                    "wp80iso": None,
+                    "wp90iso": None,
+                    "Fail": None,
+                    "Veto": None,
+                    "Loose": None,
+                    "Medium": "cut_MediumID_tthMVA_HWW",
+                    "Tight": None,
+                },
+            },
+            "15": {
+                "ttHMVA_Run3": {
+                    "wp80iso": None,
+                    "wp90iso": None,
+                    "Fail": None,
+                    "Veto": None,
+                    "Loose": None,
+                    "Medium": None,
+                    "Tight": None,
+                },
+                "ttHMVA_HWW": {
+                    "wp80iso": None,
+                    "wp90iso": None,
+                    "Fail": None,
+                    "Veto": None,
+                    "Loose": None,
+                    "Medium": None,
+                    "Tight": None,
+                },
+            },
+        }
+        correction_name = promptMVA_corrections[self.nano_version][promptMVA_wp][id_wp]
+        if correction_name is None:
+            raise ValueError(
+                f"There are no muon promptMVA weights for id wp '{id_wp}' and promptMVA '{promptMVA_wp}' combination for this nano version: {nano_version}."
+            )
+        # get electrons that pass the promptMVA wp, and within SF binning
+        if self.nano_version != "15":
+            if self.nano_version == "12":
+                electron_pt_mask = (self.flat_electrons.pt > 10.0)& (self.flat_electrons.pt < 200.0)
+            else:
+                electron_pt_mask = self.flat_electrons.pt > 10.0
+            electron_eta_mask = ak.ones_like(electron_pt_mask, dtype=bool)
+        else:
+            electron_pt_mask = (self.flat_electrons.pt > 10.0) & (
+                self.flat_electrons.pt < 1000.0
+            )
+            electron_eta_mask = (
+                np.abs(self.flat_electrons.eta + self.flat_electrons.deltaEtaSC) < 2.5
+            )
+
+        in_electron_mask = electron_pt_mask & electron_eta_mask
+        in_electrons = self.flat_electrons.mask[in_electron_mask]
+
+        # get electrons pT and abseta (replace None values with some 'in-limit' value)
+        electron_pt = ak.fill_none(in_electrons.pt, 10.0)
+        electron_eta = ak.fill_none(in_electrons.eta, 0)
+        electron_phi = ak.fill_none(in_electrons.phi, 0)
+
+        year_map = {
+            "2022postEE": "2022Re-recoE+PromptFG",
+            "2022preEE": "2022Re-recoBCD",
+            "2023preBPix": "2023PromptC",
+            "2023postBPix": "2023PromptD",
+        }
+        cset_promptMVA_args = [
+            year_map.get(self.year, self.year),
+            variation,
+            correction_name,
+            electron_eta,
+            electron_pt,
+        ]
+        if self.year.startswith("2023"):
+            cset_promptMVA_args += [electron_phi]
+        weights = unflat_sf(
+            self.cset_promptMVA["Electron-ID-SF"].evaluate(*cset_promptMVA_args),
             in_electron_mask,
             self.electrons_counts,
         )
@@ -468,3 +616,4 @@ class ElectronWeights:
             nominal_sf = full_data_eff / full_mc_eff
 
         return nominal_sf
+

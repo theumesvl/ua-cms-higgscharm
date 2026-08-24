@@ -1,11 +1,47 @@
 import yaml
 import json
+import math
+from pathlib import Path
 import numpy as np
 import awkward as ak
 import importlib.resources
 from coffea.lumi_tools import LumiMask
 from analysis.selections.trigger import trigger_mask, trigger_match_mask, zzto4l_trigger
+from analysis.tthMVA.cache import TTHMVACache
 
+def get_muon_tthMVA_cached(events, year, dataset, filename):
+    """
+    Get retrained Muon tthMVA scores using the persistent cache.
+
+    For Run 3 years for which the retrained MVA is used, scores are
+    calculated only for muons that are not already present in the cache.
+    """
+
+    if year not in [
+        "2022preEE",
+        "2022postEE",
+        "2023preBPix",
+        "2023postBPix",
+    ]:
+        raise ValueError(
+            f"Input year is '{year}', but cached retrained tthMVA "
+            "scores are only defined for 2022preEE, 2022postEE, "
+            "2023preBPix and 2023postBPix."
+        )
+
+    weightfile = (
+        Path.cwd()
+        / "analysis/data/tthMVA_2022-2023_retrained"
+        / "Muon-mvaTTH.2022EE.weights.json"
+    )
+
+    cache = TTHMVACache(weightfile)
+
+    return cache.get_scores(
+        events,
+        dataset,
+        filename,
+    )
 
 def get_lumi_mask(events, year):
     year_map = {
