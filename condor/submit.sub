@@ -7,7 +7,7 @@ log                   = LOGDIR/JOBNAME.$(ClusterId).$(ProcId).log
 should_transfer_files = YES
 transfer_input_files  = INPUTFILES
 
-+JobFlavour           = JOBFLAVOR
++JobFlavour           = 'workday'
 +SingularityImage     = IMAGE
 
 Queue JOBNUM from JOBNUM_FILE
