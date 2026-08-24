@@ -408,12 +408,6 @@ WminusHTo2Tau:
   process: WH
   key: whto2tau
   xsec: 0.0356149248
-WplusHTo2Tau:
-  era: mc
-  query: WplusHTo2TauUncorrelatedDecay_M-125_TuneCP5_13p6TeV_powheg-minnlo-pythia8/Run3Summer23BPixNanoAODv12-130X_mcRun3_2023_realistic_postBPix_v2-v2/NANOAODSIM
-  process: WH
-  key: whto2tau
-  xsec: 0.0557630976
 ttHto2C:
   era: mc
   query: ttHto2C_M-125_TuneCP5_13p6TeV_powheg-pythia8/Run3Summer23BPixNanoAODv12-130X_mcRun3_2023_realistic_postBPix_v2-v2/NANOAODSIM

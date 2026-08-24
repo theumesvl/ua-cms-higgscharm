@@ -451,7 +451,7 @@ GluGluZH_ZtoAll_Hto2Wto2L2Nu:
   xsec: 0.00309424433
 GluGluHto2Tau:
   era: mc
-  query: GluGluHToTauTau_M-125_TuneCP5_13p6TeV_powheg-pythia8/Run3Winter23NanoAOD-126X_mcRun3_2023_forPU65_v1-v2/NANOAODSIM
+  query: GluGluHto2Tau_M-125_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/Run3Summer23NanoAODv12-130X_mcRun3_2023_realistic_v14-v2/NANOAODSIM 
   process: ggH
   key: gghto2tau
   xsec: 2.9766912
