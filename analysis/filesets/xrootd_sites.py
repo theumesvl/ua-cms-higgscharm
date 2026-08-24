@@ -44,4 +44,6 @@ xroot_to_site =  {
     "root://xroot02.ncg.ingrid.pt:1094": "T2_PT_NCG_Lisbon",
     "root://xroot01.ncg.ingrid.pt:1094": "T2_PT_NCG_Lisbon",
     "root://se01.grid.nchc.org.tw": "T2_TW_NCHC",
+    "root://cmsio3.rc.ufl.edu:1094": "T2_US_Florida",
+    "root://redir.t2.ucsd.edu:1095": "T2_US_UCSD",
 }
