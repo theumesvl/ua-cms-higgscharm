@@ -486,13 +486,13 @@ ttHtoBB:
   xsec: 0.332585344
 HplusCharm_HtoWW:
   era: mc
-  query: HPlusCharm_HToWW_M-125_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/cgupta-Run3Summer22NanoAODv13-HToWW-133X_mcRun3_2022_realistic_ForNanov13_v1-v4-8653679c76b04a5edd42171c9a5e3f96/USER
+  query: HPlusCharm_HToWW_M-125_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/cgupta-Run3Summer22EENanoAODv13-HToWW-133X_mcRun3_2022_realistic_postEE_ForNanov13_v1-v1-0a036fde9f2884965a184344aedbed78/USER
   process: H+c
   key: hc
   xsec: 0.0022141
 HplusBottom_HtoWW:
   era: mc
-  query: HToWW_M-125_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/tvanlaer-Run3Summer22NanoAODv13-HToWW-133X_mcRun3_2022_realistic_ForNanov13_v1-v2-8653679c76b04a5edd42171c9a5e3f96/USER
+  query: HPlusBottom_HToWW_M-125_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/cgupta-Run3Summer22EENanoAODv13-HToWW-133X_mcRun3_2022_realistic_postEE_ForNanov13_v1-v1-0a036fde9f2884965a184344aedbed78/USER
   process: H+b
   key: hb
   xsec: 0.016972
