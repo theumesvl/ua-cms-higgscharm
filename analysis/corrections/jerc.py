@@ -3,6 +3,7 @@
 # copied from https://github.com/green-cabbage/copperheadV2/blob/main/corrections/jet.py and https://github.com/cms-btv-pog/BTVNanoCommissioning/blob/master/src/BTVNanoCommissioning/utils/correction.py
 import copy
 import yaml
+import warnings
 import contextlib
 import correctionlib
 import numpy as np
@@ -269,7 +270,7 @@ def apply_jerc_correctionlib(events, year, dataset):
         "/cvmfs/cms-griddata.cern.ch/cat/metadata/JME/jer_smear.json.gz",
     ]
     for _jersmear_path in cset_jersmear_paths:
-        if Path(_jersmear_path).exists:
+        if Path(_jersmear_path).exists():
             cset_jersmear = correctionlib.CorrectionSet.from_file(_jersmear_path)
             break
     else:
@@ -293,7 +294,7 @@ def apply_jerc_correctionlib(events, year, dataset):
             )
             == -1
         ):
-            raise (f"{d} has no JEC map : {jec_params[year][d]} available")
+            raise ValueError(f"{d} has no JEC map : {jec_params[year][d]} available")
 
     is_mc = hasattr(events, "genWeight")
     jecname = ""
