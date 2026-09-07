@@ -187,12 +187,8 @@ def apply_jerc_coffea(
         "METpt": "pt",
         "METphi": "phi",
         "JetPhi": "phi",
-        "UnClusteredEnergyDeltaX": (
-            "MetUnclustEnUpDeltaX" if hasattr(events, "Rho") else None
-        ),
-        "UnClusteredEnergyDeltaY": (
-            "MetUnclustEnUpDeltaY" if hasattr(events, "Rho") else None
-        ),
+        "UnClusteredEnergyDeltaX": "MetUnclustEnUpDeltaX",
+        "UnClusteredEnergyDeltaY": "MetUnclustEnUpDeltaY",
     }
     jec_name_map.update(
         {
