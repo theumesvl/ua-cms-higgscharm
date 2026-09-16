@@ -4,6 +4,9 @@ import hashlib
 import awkward as ak
 import numpy as np
 import pandas as pd
+import os
+import uuid
+from filelock import FileLock
 
 from analysis.tthMVA.evaluator import TMVAGradBDT
 
@@ -52,27 +55,25 @@ class TTHMVACache:
         filename,
     ):
 
-        identifier = (
-            f"{dataset}::{filename}"
-        )
+        print("dataset:", dataset)
+        print("filename:", filename)
 
-        file_hash = hashlib.sha1(
-            identifier.encode()
-        ).hexdigest()
+        filename = str(filename)
 
-        cache_dir = (
+        file_id = Path(filename).name
+
+        cache_base_sample = (
             cache_base
-            / self.model_name
+            / dataset
         )
 
-        cache_dir.mkdir(
-            parents=True,
-            exist_ok=True,
-        )
+        cache_base_sample.mkdir(parents=True, exist_ok=True)
+
+        print(f"parquet cache file path: {cache_base_sample}/{file_id}.parquet")
 
         return (
-            cache_dir
-            / f"{file_hash}.parquet"
+            cache_base_sample
+            / f"{file_id}.parquet"
         )
 
     # ------------------------------------------------------------
@@ -304,19 +305,46 @@ class TTHMVACache:
                     "tthMVA": scores,
                 }
             )
-
-            cache = pd.concat(
-                [
-                    cache,
-                    new_cache,
-                ],
-                ignore_index=True,
+            tmp_file = cache_file.with_name(
+                f"{cache_file.stem}.{uuid.uuid4().hex}.parquet"
             )
-
-            cache.to_parquet(
-                cache_file,
+            new_cache.to_parquet(
+                tmp_file,
                 index=False,
             )
+            with FileLock(str(cache_file) + ".lock"):
+        
+                if cache_file.exists():
+                    cache = pd.read_parquet(cache_file)
+                else:
+                    cache = pd.DataFrame(
+                        columns=[
+                            "run",
+                            "lumi",
+                            "event",
+                            "muon",
+                            "tthMVA",
+                        ]
+                    )
+        
+                tmp = pd.read_parquet(tmp_file)
+        
+                cache = pd.concat(
+                    [cache, tmp],
+                    ignore_index=True,
+                )
+        
+                cache = cache.drop_duplicates(
+                    subset=["run", "lumi", "event", "muon"],
+                    keep="last",
+                )
+        
+                cache.to_parquet(
+                    cache_file,
+                    index=False,
+                )
+        
+                tmp_file.unlink()
 
         # --------------------------------------------------------
         # Build lookup
