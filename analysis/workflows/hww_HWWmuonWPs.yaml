@@ -146,6 +146,7 @@ corrections:
     muon:
       - id: tight_HWW
       - iso: tight_HWW
+      - promptMVA: tight_HWW
       - trigger: false
     electron:
       - id: wp80iso

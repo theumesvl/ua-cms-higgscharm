@@ -24,18 +24,18 @@ datasets:
     - hb
 object_selection:
   muons:
-    field: events.Muon
+    field: select_muons
     cuts:
       - working_points.muon_id(events, 'tight_HWW')
       - working_points.muon_iso(events, 'tight_HWW')
-      - working_points.muon_promptMVA(events, 'tight_HWW')
+      - working_points.muon_promptMVA(events, year, 'tight_HWW')
   electrons:
-    field: events.Electron
+    field: select_electrons
     cuts:
       - events.Electron.pt > 10
       - np.abs(events.Electron.eta) < 2.5
       - working_points.electron_id(events, 'Medium')
-      - working_points.electron_promptMVA(events, 'ttHMVA_Run3')
+      - working_points.electron_promptMVA(events, year, 'ttHMVA_Run3')
       - delta_r_higher(events.Electron, objects['muons'], 0.4)
   leptons:
     field: select_hww_leptons
