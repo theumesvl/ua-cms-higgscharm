@@ -1,299 +1,317 @@
-Muon0C:
+Muon0Run2024C:
   era: C
   query: Muon0/Run2024C-MINIv6NANOv15-v1/NANOAOD
   process: Data
   key: muon
   xsec: None
-Muon1C:
+Muon1Run2024C:
   era: C
   query: Muon1/Run2024C-MINIv6NANOv15-v1/NANOAOD
   process: Data
   key: muon
   xsec: None
-MuonEGC:
+MuonEGRun2024C:
   era: C
   query: MuonEG/Run2024C-MINIv6NANOv15-v1/NANOAOD
   process: Data
   key: muon_electron
   xsec: None
-EGamma0C:
+EGamma0Run2024C:
   era: C
   query: EGamma0/Run2024C-MINIv6NANOv15-v1/NANOAOD
   process: Data
   key: electron
   xsec: None
-EGamma1C:
+EGamma1Run2024C:
   era: C
   query: EGamma1/Run2024C-MINIv6NANOv15-v1/NANOAOD
   process: Data
   key: electron
   xsec: None
-Muon0D:
+Muon0Run2024D:
   era: D
   query: Muon0/Run2024D-MINIv6NANOv15-v1/NANOAOD
   process: Data
   key: muon
   xsec: None
-Muon1D:
+Muon1Run2024D:
   era: D
   query: Muon1/Run2024D-MINIv6NANOv15-v1/NANOAOD
   process: Data
   key: muon
   xsec: None
-MuonEGD:
+MuonEGRun2024D:
   era: D
   query: MuonEG/Run2024D-MINIv6NANOv15-v1/NANOAOD
   process: Data
   key: muon_electron
   xsec: None
-EGamma0D:
+EGamma0Run2024D:
   era: D
   query: EGamma0/Run2024D-MINIv6NANOv15-v1/NANOAOD
   process: Data
   key: electron
   xsec: None
-EGamma1D:
+EGamma1Run2024D:
   era: D
   query: EGamma1/Run2024D-MINIv6NANOv15-v1/NANOAOD
   process: Data
   key: electron
   xsec: None
-Muon0E:
+Muon0Run2024E:
   era: E
   query: Muon0/Run2024E-MINIv6NANOv15-v1/NANOAOD
   process: Data
   key: muon
   xsec: None
-Muon1E:
+Muon1Run2024E:
   era: E
   query: Muon1/Run2024E-MINIv6NANOv15-v1/NANOAOD
   process: Data
   key: muon
   xsec: None
-MuonEGE:
+MuonEGRun2024E:
   era: E
   query: MuonEG/Run2024E-MINIv6NANOv15-v1/NANOAOD
   process: Data
   key: muon_electron
   xsec: None
-EGamma0E:
+EGamma0Run2024E:
   era: E
   query: EGamma0/Run2024E-MINIv6NANOv15-v1/NANOAOD
   process: Data
   key: electron
   xsec: None
-EGamma1E:
+EGamma1Run2024E:
   era: E
   query: EGamma1/Run2024E-MINIv6NANOv15-v1/NANOAOD
   process: Data
   key: electron
   xsec: None
-Muon0F:
+Muon0Run2024F:
   era: F
   query: Muon0/Run2024F-MINIv6NANOv15-v1/NANOAOD
   process: Data
   key: muon
   xsec: None
-Muon1F:
+Muon1Run2024F:
   era: F
   query: Muon1/Run2024F-MINIv6NANOv15-v1/NANOAOD
   process: Data
   key: muon
   xsec: None
-MuonEGF:
+MuonEGRun2024F:
   era: F
   query: MuonEG/Run2024F-MINIv6NANOv15-v2/NANOAOD
   process: Data
   key: muon_electron
   xsec: None
-EGamma0F:
+EGamma0Run2024F:
   era: F
   query: EGamma0/Run2024F-MINIv6NANOv15-v1/NANOAOD
   process: Data
   key: electron
   xsec: None
-EGamma1F:
+EGamma1Run2024F:
   era: F
   query: EGamma1/Run2024F-MINIv6NANOv15-v1/NANOAOD
   process: Data
   key: electron
   xsec: None
-Muon0G:
+Muon0Run2024G:
   era: G
   query: Muon0/Run2024G-MINIv6NANOv15-v1/NANOAOD
   process: Data
   key: muon
   xsec: None
-Muon1G:
+Muon1Run2024G:
   era: G
   query: Muon1/Run2024G-MINIv6NANOv15-v2/NANOAOD
   process: Data
   key: muon
   xsec: None
-MuonEGG:
+MuonEGRun2024G:
   era: G
   query: MuonEG/Run2024G-MINIv6NANOv15-v3/NANOAOD
   process: Data
   key: muon_electron
   xsec: None
-EGamma0G:
+EGamma0Run2024G:
   era: G
   query: EGamma0/Run2024G-MINIv6NANOv15-v2/NANOAOD
   process: Data
   key: electron
   xsec: None
-EGamma1G:
+EGamma1Run2024G:
   era: G
   query: EGamma1/Run2024G-MINIv6NANOv15-v2/NANOAOD
   process: Data
   key: electron
   xsec: None
-Muon0H:
+Muon0Run2024H:
   era: H
   query: Muon0/Run2024H-MINIv6NANOv15-v1/NANOAOD
   process: Data
   key: muon
   xsec: None
-Muon1H:
+Muon1Run2024H:
   era: H
   query: Muon1/Run2024H-MINIv6NANOv15-v2/NANOAOD
   process: Data
   key: muon
   xsec: None
-MuonEGH:
+MuonEGRun2024H:
   era: H
   query: MuonEG/Run2024H-MINIv6NANOv15-v2/NANOAOD
   process: Data
   key: muon_electron
   xsec: None
-EGamma0H:
+EGamma0Run2024H:
   era: H
   query: EGamma0/Run2024H-MINIv6NANOv15-v2/NANOAOD
   process: Data
   key: electron
   xsec: None
-EGamma1H:
+EGamma1Run2024H:
   era: H
   query: EGamma1/Run2024H-MINIv6NANOv15-v1/NANOAOD
   process: Data
   key: electron
   xsec: None
-Muon0v1I:
+Muon0Run2024I:
   era: I
   query: Muon0/Run2024I-MINIv6NANOv15-v1/NANOAOD
   process: Data
   key: muon
   xsec: None
-Muon0v2I:
+Muon0Run2024I:
   era: I
   query: Muon0/Run2024I-MINIv6NANOv15_v2-v1/NANOAOD
   process: Data
   key: muon
   xsec: None
-Muon1v1I:
+Muon1Run2024I:
   era: I
   query: Muon1/Run2024I-MINIv6NANOv15-v1/NANOAOD
   process: Data
   key: muon
   xsec: None
-Muon1v2I:
+Muon1Run2024I:
   era: I
   query: Muon1/Run2024I-MINIv6NANOv15_v2-v1/NANOAOD
   process: Data
   key: muon
   xsec: None
-MuonEGv1I:
+MuonEGRun2024I:
   era: I
   query: MuonEG/Run2024I-MINIv6NANOv15-v2/NANOAOD
   process: Data
   key: muon_electron
   xsec: None
-MuonEGv2I:
+MuonEGRun2024I:
   era: I
   query: MuonEG/Run2024I-MINIv6NANOv15_v2-v2/NANOAOD
   process: Data
   key: muon_electron
   xsec: None
-EGamma0v1I:
+EGamma0Run2024I:
   era: I
   query: EGamma0/Run2024I-MINIv6NANOv15-v1/NANOAOD
   process: Data
   key: electron
   xsec: None
-EGamma0v2I:
+EGamma0Run2024I:
   era: I
   query: EGamma0/Run2024I-MINIv6NANOv15_v2-v1/NANOAOD
   process: Data
   key: electron
   xsec: None
-EGamma1v1I:
+EGamma1Run2024I:
   era: I
   query: EGamma1/Run2024I-MINIv6NANOv15-v1/NANOAOD
   process: Data
   key: electron
   xsec: None
-EGamma1v2I:
+EGamma1Run2024I:
   era: I
   query: EGamma1/Run2024I-MINIv6NANOv15_v2-v1/NANOAOD
   process: Data
   key: electron
   xsec: None
-DYto2Mu:
+DYto2Mu-MLL-10to50:
+  era: mc
+  query: DYto2Mu-2Jets_Bin-MLL-10to50_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM
+  process: DY+Jets
+  key: dy_nlo
+  xsec: 21190
+DYto2E-MLL-10to50:
+  era: mc
+  query: DYto2E-2Jets_Bin-MLL-10to50_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM
+  process: DY+Jets
+  key: dy_nlo
+  xsec: 21140
+DYto2Tau-MLL-10to50:
+  era: mc
+  query: DYto2Tau-2Jets_Bin-MLL-10to50_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM
+  process: DY+Jets
+  key: dy_nlo
+  xsec: 21160
+DYto2Mu-MLL-50:
   era: mc
   query: DYto2Mu-2Jets_Bin-MLL-50_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v6/NANOAODSIM
-  process: DYJetsToLL
+  process: DY+Jets
   key: dy_nlo
-  xsec: 6662
-DYto2E:
+  xsec: 2240
+DYto2E-MLL-50:
   era: mc
   query: DYto2E-2Jets_Bin-MLL-50_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v4/NANOAODSIM
-  process: DYJetsToLL
+  process: DY+Jets
   key: dy_nlo
-  xsec: 6639
-DYto2Tau:
+  xsec: 2244
+DYto2Tau-MLL-50:
   era: mc
   query: DYto2Tau-2Jets_Bin-MLL-50_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v7/NANOAODSIM
-  process: DYJetsToLL
+  process: DY+Jets
   key: dy_nlo
-  xsec: null
+  xsec: 2219
 TTto2L2Nu:
   era: mc
   query: TTto2L2Nu_TuneCP5_13p6TeV_powheg-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v3/NANOAODSIM
   process: tt
-  key:
-    - tt
-    - tt_semileptonic
-  xsec: 97.78
+  key: tt
+  xsec: 98.578
 TTto4Q:
   era: mc
   query: TTto4Q_TuneCP5_13p6TeV_powheg-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM
   process: tt
   key: tt
-  xsec: 418.61
+  xsec: 418.574
 TTtoLNu2Q:
   era: mc
   query: TTtoLNu2Q_TuneCP5_13p6TeV_powheg-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM
   process: tt
-  key: tt
-  xsec: 404.63
+  key: 
+    - tt
+    - tt_semileptonic
+  xsec: 406.263
 TWminusto2L2Nu:
   era: mc
   query: TWminusto2L2Nu_TuneCP5_13p6TeV_powheg-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM
   process: Single Top
   key: singletop
-  xsec: 4.66
+  xsec: 4.691
 TWminusto4Q:
   era: mc
   query: TWminusto4Q_TuneCP5_13p6TeV_powheg-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM
   process: Single Top
   key: singletop
-  xsec: 19.98
+  xsec: 19.918
 TWminustoLNu2Q:
   era: mc
   query: TWminustoLNu2Q_TuneCP5_13p6TeV_powheg-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM
   process: Single Top
   key: singletop
-  xsec: 19.31
+  xsec: 19.332
 TbarBQto2Q:
   era: mc
   query: TbarBQto2Q-t-channel-4FS_TuneCP5_13p6TeV_powheg-madspin-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM
@@ -311,19 +329,19 @@ TbarWplusto2L2Nu:
   query: TbarWplusto2L2Nu_TuneCP5_13p6TeV_powheg-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM
   process: Single Top
   key: singletop
-  xsec: 4.66
+  xsec: 4.691
 TbarWplusto4Q:
   era: mc
   query: TbarWplusto4Q_TuneCP5_13p6TeV_powheg-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM
   process: Single Top
   key: singletop
-  xsec: 19.98
+  xsec: 19.918
 TbarWplustoLNu2Q:
   era: mc
   query: TbarWplustoLNu2Q_TuneCP5_13p6TeV_powheg-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM
   process: Single Top
   key: singletop
-  xsec: 19.31
+  xsec: 19.332
 TBbarQto2Q:
   era: mc
   query: TBbarQto2Q-t-channel-4FS_TuneCP5_13p6TeV_powheg-madspin-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM
@@ -340,13 +358,17 @@ WW:
   era: mc
   query: WW_TuneCP5_13p6TeV_pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM
   process: Diboson
-  key: diboson
+  key: 
+    - ww
+    - diboson
   xsec: 122.30
 WZ:
   era: mc
   query: WZ_TuneCP5_13p6TeV_pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM
   process: Diboson
-  key: diboson
+  key: 
+    - wz
+    - diboson
   xsec: 54.30
 ZZ:
   era: mc
@@ -446,3 +468,87 @@ TTH_Hto2Z:
   process: H(125) 
   key: higgs
   xsec: 0.00312
+TbarBtoLminusNuB:
+  era: mc
+  query: TbarBtoLminusNuB-s-channel-4FS_TuneCP5_13p6TeV_amcatnlo-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM
+  process: Single Top 
+  key: singletop
+  xsec: 1.4812578
+TBbartoLplusNuBbar:
+  era: mc
+  query: TBbartoLplusNuBbar-s-channel-4FS_TuneCP5_13p6TeV_amcatnlo-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM
+  process: Single Top 
+  key: singletop
+  xsec: 2.3666148
+WtoLNu_4Jets-1J:
+  era: mc
+  query: WtoLNu-4Jets_Bin-1J_TuneCP5_13p6TeV_madgraphMLM-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM
+  process: V+Jets 
+  key: v+jets-wtolnu
+  xsec: 9141
+WtoLNu_4Jets-2J:
+  era: mc
+  query: WtoLNu-4Jets_Bin-2J_TuneCP5_13p6TeV_madgraphMLM-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM
+  process: V+Jets 
+  key: v+jets-wtolnu
+  xsec: 2931
+WtoLNu_4Jets-3J:
+  era: mc
+  query: WtoLNu-4Jets_Bin-3J_TuneCP5_13p6TeV_madgraphMLM-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM
+  process: V+Jets 
+  key: v+jets-wtolnu
+  xsec: 864.6
+WtoLNu_4Jets-4J:
+  era: mc
+  query: WtoLNu-4Jets_Bin-4J_TuneCP5_13p6TeV_madgraphMLM-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM
+  process: V+Jets
+  key: v+jets-wtolnu
+  xsec: 417.8
+WtoENu:
+  era: mc
+  query: WtoENu-2Jets_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/RunIII2024Summer24NanoAOD-140X_mcRun3_2024_realistic_v26-v3/NANOAODSIM
+  process: V+Jets
+  key: v+jets
+  xsec: 68430
+WtoMuNu:
+  era: mc
+  query: WtoMuNu-2Jets_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v3/NANOAODSIM
+  process: V+Jets
+  key: v+jets
+  xsec: 68100
+WtoTauNu:
+  era: mc
+  query: WtoTauNu-2Jets_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v3/NANOAODSIM
+  process: V+Jets
+  key: v+jets
+  xsec: 68080
+WGtoLNuG:
+  era: mc
+  query: WGtoLNuG-1Jets_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM
+  process: WG 
+  key: wg
+  xsec: 671.5
+WGtoLNuG_PTG100:
+  era: mc
+  query: WGtoLNuG-1Jets_Bin-PTG-100_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM
+  process: WG 
+  key: wg-excl
+  xsec: 2.556
+WGtoLNuG_PTG200:
+  era: mc
+  query: WGtoLNuG-1Jets_Bin-PTG-200_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM
+  process: WG 
+  key: wg-excl
+  xsec: 0.3179
+WGtoLNuG_PTG400:
+  era: mc
+  query: WGtoLNuG-1Jets_Bin-PTG-400_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM
+  process: WG
+  key: wg-excl
+  xsec: 0.02661
+WGtoLNuG_PTG600:
+  era: mc
+  query: WGtoLNuG-1Jets_Bin-PTG-600_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM
+  process: WG 
+  key: wg-excl
+  xsec: 0.004734
