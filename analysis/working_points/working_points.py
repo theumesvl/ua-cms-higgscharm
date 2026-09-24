@@ -84,10 +84,19 @@ class WorkingPoints:
 
         return wps[wp]
 
-    def electron_promptMVA(self, events, wp):
+    def electron_promptMVA(self, events, year, wp):
+        if year in ['2016preVFP', '2016postVFP', '2017', '2018']:
+            tthMVAuppercut = (events.Electron.mvaTTH > 0.9) # this value to use as a cut is not verified
+            tthMVAlowercut = (events.Electron.mvaTTH > 0.35) # this value to use as a cut is not verified
+        elif year in ['2022preEE', '2022postEE', '2023preBPix', '2023postBPix']:
+            tthMVAuppercut = (events.Electron.tthMVA > 0.9)
+            tthMVAlowercut = (events.Electron.tthMVA > 0.35)
+        else:
+            tthMVAuppercut = (events.Electron.promptMVA > 0.9) # this value to use as a cut is not verified
+            tthMVAlowercut = (events.Electron.promptMVA > 0.35) # this value to use as a cut is not verified
         wps = {
             "ttHMVA_Run3": (
-                (events.Electron.mvaTTH > 0.5)
+                (tthMVAuppercut)
                 & (
                     ((np.abs(events.Electron.eta) <= 1.479) & (np.abs(events.Electron.dxy) < 0.05))
                     |
@@ -102,9 +111,9 @@ class WorkingPoints:
             ),
             "ttHMVA_HWW": (
                 (
-                    ((events.Electron.pt <= 20) & (events.Electron.mvaTTH > 0.35))
+                    ((events.Electron.pt <= 20) & (tthMVAlowercut))
                     |
-                    ((events.Electron.pt > 20) & (events.Electron.mvaTTH > 0.90))
+                    ((events.Electron.pt > 20) & (tthMVAuppercut))
                 )
                 & (
                     ((np.abs(events.Electron.eta) <= 1.479) & (np.abs(events.Electron.dxy) < 0.05))

@@ -49,6 +49,7 @@ class ElectronWeights:
         self.cset_id = correctionlib.CorrectionSet.from_file(
             correction_files["electron_id"][year]
         )
+        print(correction_files["electron_id"][year])
         self.cset_promptMVA = correctionlib.CorrectionSet.from_file(
             correction_files["electron_HWW"][year]
         )
@@ -95,8 +96,12 @@ class ElectronWeights:
                 f"No scale factors provided for nano version '{nano_version} / run 2' for promptMVA working points."
             )
         elif self.nano_version == "15":
+            nominal_weights = self.get_promptMVA_weights_run3(variation="sf", id_wp=id_wp, promptMVA_wp = promptMVA_wp)
+            up_weights = self.get_promptMVA_weights_run3(variation="sfup", id_wp=id_wp, promptMVA_wp = promptMVA_wp)
+            down_weights = self.get_promptMVA_weights_run3(variation="sfdown", id_wp=id_wp, promptMVA_wp = promptMVA_wp)
+        else:
             raise ValueError(
-                f"No scale factors provided for nano version '{nano_version} / 2024 and beyond' for promptMVA working points."
+                f"No scale factors provided for nano version '{nano_version}' for promptMVA working points, only for nano version 12 and 15."
             )
         if self.variation == "nominal":
             # add scale factors to weights container
@@ -205,7 +210,9 @@ class ElectronWeights:
             "2022preEE": "2022Re-recoBCD",
             "2023preBPix": "2023PromptC",
             "2023postBPix": "2023PromptD",
+            "2024": "2024PromptCDE+Re-recoFGHI",
         }
+        print(cset_id)
         cset_args = [
             year_map.get(self.year, self.year),
             variation,
@@ -273,7 +280,7 @@ class ElectronWeights:
                     "Fail": None,
                     "Veto": None,
                     "Loose": None,
-                    "Medium": None,
+                    "Medium": "cut_MediumID_tthMVA_Run3",
                     "Tight": None,
                 },
                 "ttHMVA_HWW": {
@@ -282,7 +289,7 @@ class ElectronWeights:
                     "Fail": None,
                     "Veto": None,
                     "Loose": None,
-                    "Medium": None,
+                    "Medium": "cut_MediumID_tthMVA_HWW",
                     "Tight": None,
                 },
             },
@@ -320,6 +327,7 @@ class ElectronWeights:
             "2022preEE": "2022Re-recoBCD",
             "2023preBPix": "2023PromptC",
             "2023postBPix": "2023PromptD",
+            "2024": "2024PromptCDE+Re-recoFGHI",
         }
         cset_promptMVA_args = [
             year_map.get(self.year, self.year),

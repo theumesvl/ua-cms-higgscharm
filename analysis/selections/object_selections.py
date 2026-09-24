@@ -16,7 +16,7 @@ from analysis.selections import (
     select_candidate_mass,
     select_candidate_cjet_dphi,
 )
-from analysis.selections.event_selections import get_muon_tthMVA_cached
+from analysis.selections.event_selections import get_tthMVA_cached
 
 
 class ObjectSelector:
@@ -661,11 +661,12 @@ class ObjectSelector:
     def select_muons(self, obj_name):
         "expands the Muon events with the retrained MVA scores if necessary and asked"
         if self.year in ['2022preEE', '2022postEE', '2023preBPix', '2023postBPix']:
-            tth_scores = get_muon_tthMVA_cached(
+            tth_scores = get_tthMVA_cached(
                 self.events,
                 self.year,
                 self.dataset,
                 self.filename,
+                obj_name
             )
 
             self.events.Muon = ak.with_field(
@@ -679,3 +680,26 @@ class ObjectSelector:
             )
 
         self.objects[obj_name] = self.events.Muon
+
+    def select_electrons(self, obj_name):
+        "expands the Electron events with the retrained MVA scores if necessary and asked"
+        if self.year in ['2022preEE', '2022postEE', '2023preBPix', '2023postBPix']:
+            tth_scores = get_tthMVA_cached(
+                self.events,
+                self.year,
+                self.dataset,
+                self.filename,
+                obj_name
+            )
+
+            self.events.Electron = ak.with_field(
+                self.events.Electron,
+                tth_scores,
+                "tthMVA"
+            )
+        else:
+            print(
+                f"Input year is '{self.year}', but the re-evaluation of the tthMVA score for Run 3 only needs to be done for 2022preEE, 2022postEE, 2023preBPix and 2023postBPix. No retrained tthMVA score added"
+            )
+
+        self.objects[obj_name] = self.events.Electron

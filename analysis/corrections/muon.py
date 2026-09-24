@@ -167,7 +167,7 @@ class MuonWeights:
     def get_id_weights(self, id_wp, variation):
         """Compute muon ID weights"""
         useHWW_sf = False
-        if self.year in ["2022preEE", "2022postEE", "2023preBPix", "2023postBPix"] and id_wp == "tight_HWW":
+        if self.year in ["2022preEE", "2022postEE", "2023preBPix", "2023postBPix", "2024"] and id_wp == "tight_HWW":
             # get muon id/iso/HLT correction set from HWW main analysis
             self.cset = correctionlib.CorrectionSet.from_file(
                 correction_files["muon_HWW"][self.year]
@@ -177,7 +177,7 @@ class MuonWeights:
             "loose": "NUM_LooseID_DEN_TrackerMuons",
             "medium": "NUM_MediumID_DEN_TrackerMuons",
             "tight": "NUM_TightID_DEN_TrackerMuons",
-             "tight_HWW": "NUM_TightID_HWW_DEN_TrackerMuons",
+            "tight_HWW": "NUM_TightID_HWW_DEN_TrackerMuons",
         }
         # get muons that pass the id wp, and within SF binning
         if useHWW_sf:
@@ -213,7 +213,7 @@ class MuonWeights:
     def get_iso_weights(self, id_wp, iso_wp, variation):
         """Compute muon iso weights"""
         useHWW_sf = False
-        if self.year in ["2022preEE", "2022postEE", "2023preBPix", "2023postBPix"] and (iso_wp == "tight_HWW" or id_wp == "tight_HWW"):
+        if self.year in ["2022preEE", "2022postEE", "2023preBPix", "2023postBPix", "2024"] and (iso_wp == "tight_HWW" or id_wp == "tight_HWW"):
             # get muon id/iso/HLT correction set from HWW main analysis
             self.cset = correctionlib.CorrectionSet.from_file(
                 correction_files["muon_HWW"][self.year]
@@ -276,6 +276,12 @@ class MuonWeights:
                     "medium": "NUM_TightPFIso_DEN_MediumID",
                     "tight": "NUM_TightPFIso_DEN_TightID",
                 },
+                "tight_HWW": {
+                    "loose": None,
+                    "medium": "NUM_TightPFIso_DEN_MediumID",
+                    "tight": "NUM_TightPFIso_DEN_TightID",
+                    "tight_HWW": "NUM_TightPFIso_DEN_TightID_HWW",
+                },
             },
         }
         correction_name = iso_corrections[self.nano_version][iso_wp][id_wp]
@@ -322,7 +328,7 @@ class MuonWeights:
     def get_promptMVA_weights(self, id_wp, iso_wp, promptMVA_wp, variation):
         """Compute muon promptMVA weights"""
         useHWW_sf = False
-        if self.year in ["2022preEE", "2022postEE", "2023preBPix", "2023postBPix"] and (iso_wp == "tight_HWW" or id_wp == "tight_HWW" or promptMVA_wp == "tight_HWW"):
+        if self.year in ["2022preEE", "2022postEE", "2023preBPix", "2023postBPix", "2024"] and (iso_wp == "tight_HWW" or id_wp == "tight_HWW" or promptMVA_wp == "tight_HWW"):
             # get muon id/iso/HLT correction set from HWW main analysis
             self.cset = correctionlib.CorrectionSet.from_file(
                 correction_files["muon_HWW"][self.year]
@@ -393,6 +399,12 @@ class MuonWeights:
                         "loose": None,
                         "medium": None,
                         "tight": None,
+                    },
+                    "tight_HWW": {
+                        "loose": None,
+                        "medium": None,
+                        "tight": None,
+                        "tight_HWW": "NUM_TightID_HWW_TightIso_tthMVA_DEN_TightPFIso",
                     },
                 },
             },

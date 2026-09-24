@@ -9,9 +9,9 @@ from coffea.lumi_tools import LumiMask
 from analysis.selections.trigger import trigger_mask, trigger_match_mask, zzto4l_trigger
 from analysis.tthMVA.cache import TTHMVACache
 
-def get_muon_tthMVA_cached(events, year, dataset, filename):
+def get_tthMVA_cached(events, year, dataset, filename, particle):
     """
-    Get retrained Muon tthMVA scores using the persistent cache.
+    Get retrained Muon and Electron tthMVA scores using the persistent cache.
 
     For Run 3 years for which the retrained MVA is used, scores are
     calculated only for muons that are not already present in the cache.
@@ -29,11 +29,23 @@ def get_muon_tthMVA_cached(events, year, dataset, filename):
             "2023preBPix and 2023postBPix."
         )
 
-    weightfile = (
-        Path.cwd()
-        / "analysis/data/tthMVA_2022-2023_retrained"
-        / "Muon-mvaTTH.2022EE.weights.json"
-    )
+    if particle == "muons":
+        weightfile = (
+            Path.cwd()
+            / "analysis/data/tthMVA_2022-2023_retrained"
+            / "Muon-mvaTTH.2022EE.weights.json"
+        )
+    elif particle == "electrons":
+        weightfile = (
+            Path.cwd()
+            / "analysis/data/tthMVA_2022-2023_retrained"
+            / "Electron-mvaTTH.2022EE.weights_mvaISO.json"
+        )
+    else:
+        raise ValueError(
+            f"Input partcile is '{particle}', but the only valid options are 'muons' or 'electrons'"
+            "Check the object_selections.py and the hww config file to debug."
+        )
 
     cache = TTHMVACache(weightfile)
 
@@ -41,7 +53,9 @@ def get_muon_tthMVA_cached(events, year, dataset, filename):
         events,
         dataset,
         filename,
+        particle,
     )
+
 
 def get_lumi_mask(events, year):
     year_map = {

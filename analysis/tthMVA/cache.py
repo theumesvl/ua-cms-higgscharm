@@ -83,71 +83,134 @@ class TTHMVACache:
     def _calculate_scores(
         self,
         events,
-        muon_indices,
+        indices,
+        particle,
     ):
 
         values = []
 
-        for event_idx, mu_idx in muon_indices:
+        if particle == "muons":
+            for event_idx, mu_idx in indices:
 
-            mu = events.Muon[
-                event_idx,
-                mu_idx,
-            ]
+                mu = events.Muon[event_idx, mu_idx]
 
-            jet_idx = int(mu.jetIdx)
+                # ----------------------------------------------------
+                # Variables directly from NanoAOD
+                # ----------------------------------------------------
 
-            if jet_idx >= 0:
+                pt = float(mu.pt)
+                eta = float(mu.eta)
+                pfRelIso03_all = float(mu.pfRelIso03_all)
+                miniPFRelIso_chg = float(mu.miniPFRelIso_chg)
+                jetNDauCharged = float(mu.jetNDauCharged)
+                jetPtRelv2 = float(mu.jetPtRelv2)
+                sip3d = float(mu.sip3d)
+                dxy = float(mu.dxy)
+                dz = float(mu.dz)
+                segmentComp = float(mu.segmentComp)
 
-                jet_btag = float(
-                    events.Jet[
-                        event_idx,
-                        jet_idx,
-                    ].btagDeepFlavB
-                )
+                # ----------------------------------------------------
+                # Derived variables
+                # ----------------------------------------------------
+                miniRelIsoNeutral = (float(mu.miniPFRelIso_all)- miniPFRelIso_chg)
 
-            else:
+                jet_idx = int(mu.jetIdx)
 
-                jet_btag = 0.0
+                if jet_idx >= 0:
+                    jetBTagDeepFlavB = float(events.Jet[event_idx,jet_idx,].btagDeepFlavB)
+                else:
+                    jetBTagDeepFlavB = 0.0
 
-            x = [
-                float(mu.pt),
-                float(mu.eta),
-                float(mu.pfRelIso03_all),
-                float(mu.miniPFRelIso_chg),
+                jetPtRatio = min(1.0 / (1.0 + float(mu.jetRelIso)),1.5)
 
-                float(
-                    mu.miniPFRelIso_all
-                    - mu.miniPFRelIso_chg
-                ),
+                log_dxy = np.log(abs(dxy))
+                log_dz = np.log(abs(dz))
 
-                float(mu.jetNDauCharged),
-                float(mu.jetPtRelv2),
+                # ----------------------------------------------------
+                # MVA input vector
+                # ----------------------------------------------------
 
-                jet_btag,
+                x = [
+                    pt,
+                    eta,
+                    pfRelIso03_all,
+                    miniPFRelIso_chg,
+                    miniRelIsoNeutral,
+                    jetNDauCharged,
+                    jetPtRelv2,
+                    jetBTagDeepFlavB,
+                    jetPtRatio,
+                    sip3d,
+                    log_dxy,
+                    log_dz,
+                    segmentComp,
+                ]
 
-                min(
-                    1.0 / (
-                        1.0
-                        + float(mu.jetRelIso)
-                    ),
-                    1.5,
-                ),
+                values.append(x)
 
-                float(mu.sip3d),
+        elif particle == "electrons":
+            for event_idx, ele_idx in indices:
 
-                np.log(
-                    abs(float(mu.dxy))
-                ),
+                ele = events.Electron[event_idx, ele_idx]
 
-                np.log(
-                    abs(float(mu.dz))
-                ),
+                # ----------------------------------------------------
+                # Variables directly from NanoAOD
+                # ----------------------------------------------------
 
-                float(mu.segmentComp),
-            ]
+                pt = float(ele.pt)
+                eta = float(ele.eta)
+                pfRelIso03_all = float(ele.pfRelIso03_all)
+                miniPFRelIso_chg = float(ele.miniPFRelIso_chg)
+                jetNDauCharged = float(ele.jetNDauCharged)
+                jetPtRelv2 = float(ele.jetPtRelv2)
+                sip3d = float(ele.sip3d)
+                dxy = float(ele.dxy)
+                dz = float(ele.dz)
+                mvaIso = float(ele.mvaIso)
 
-            values.append(x)
+                # ----------------------------------------------------
+                # Derived variables
+                # ----------------------------------------------------
+                miniRelIsoNeutral = (float(ele.miniPFRelIso_all)- miniPFRelIso_chg)
+
+                jet_idx = int(ele.jetIdx)
+
+                if jet_idx >= 0:
+                    jetBTagDeepFlavB = float(events.Jet[event_idx,jet_idx,].btagDeepFlavB)
+                else:
+                    jetBTagDeepFlavB = 0.0
+
+                jetPtRatio = min(1.0 / (1.0 + float(ele.jetRelIso)),1.5)
+
+                log_dxy = np.log(abs(dxy))
+                log_dz = np.log(abs(dz))
+
+                # ----------------------------------------------------
+                # MVA input vector
+                # ----------------------------------------------------
+
+                x = [
+                    pt,
+                    eta,
+                    pfRelIso03_all,
+                    miniPFRelIso_chg,
+                    miniRelIsoNeutral,
+                    jetNDauCharged,
+                    jetPtRelv2,
+                    jetBTagDeepFlavB,
+                    jetPtRatio,
+                    sip3d,
+                    log_dxy,
+                    log_dz,
+                    mvaIso,
+                ]
+
+                values.append(x)
+        else:
+            raise ValueError(
+                f"Input partcile is '{particle}', but the only valid options are 'muons' or 'electrons'"
+                "Check the object_selections.py and the hww config file to debug."
+            )
 
         if not values:
             return np.empty(
@@ -164,6 +227,7 @@ class TTHMVACache:
             values
         )
 
+
     # ------------------------------------------------------------
     # Get scores
     # ------------------------------------------------------------
@@ -173,6 +237,7 @@ class TTHMVACache:
         events,
         dataset,
         filename,
+        particle,
     ):
 
         cache_file = self._cache_file(
@@ -217,151 +282,334 @@ class TTHMVACache:
                     "lumi",
                     "event",
                     "muon",
-                    "tthMVA",
+                    "muon_tthMVA",
+                    "electron",
+                    "electron_tthMVA",
                 ]
             )
 
         # --------------------------------------------------------
         # Build cache lookup
         # --------------------------------------------------------
-
-        cached_keys = set(
-            zip(
-                cache["run"].astype(
-                    np.int64
-                ),
-                cache["lumi"].astype(
-                    np.int64
-                ),
-                cache["event"].astype(
-                    np.int64
-                ),
-                cache["muon"].astype(
-                    np.int64
-                ),
+        if particle == "muons": 
+            muon_cache = cache[cache["muon"].notna()]
+            cached_keys = set(
+                zip(
+                    muon_cache["run"].astype(np.int64),
+                    muon_cache["lumi"].astype(np.int64),
+                    muon_cache["event"].astype(np.int64),
+                    muon_cache["muon"].astype(np.int64),
+                )
             )
-        )
+        elif particle == "electrons":  
+            electron_cache = cache[cache["electron"].notna()]
+            
+            cached_keys = set(
+                zip(
+                    electron_cache["run"].astype(np.int64),
+                    electron_cache["lumi"].astype(np.int64),
+                    electron_cache["event"].astype(np.int64),
+                    electron_cache["electron"].astype(np.int64),
+                )
+            )
+        else:
+            raise ValueError(
+                f"Input particle is '{particle}', but the only valid options are 'muons' or 'electrons'"
+                "Check the object_selections.py and the hww config file to debug."
+            )
 
         # --------------------------------------------------------
-        # Find missing muons
+        # Find missing muons and electrons
         # --------------------------------------------------------
 
-        missing_keys = []
-        missing_indices = []
+        missing_muon_keys = []
+        missing_muon_indices = []
+        missing_electron_keys = []
+        missing_electron_indices = []
 
         for ievt in range(len(events)):
+            
+            if particle == "muons":
+                for imu in range(
+                    len(events.Muon[ievt])
+                ):
 
-            for imu in range(
-                len(events.Muon[ievt])
-            ):
-
-                key = (
-                    int(run[ievt]),
-                    int(lumi[ievt]),
-                    int(event[ievt]),
-                    int(imu),
-                )
-
-                if key not in cached_keys:
-
-                    missing_keys.append(key)
-
-                    missing_indices.append(
-                        (
-                            ievt,
-                            imu,
-                        )
+                    key = (
+                        int(run[ievt]),
+                        int(lumi[ievt]),
+                        int(event[ievt]),
+                        int(imu),
                     )
+
+                    if key not in cached_keys:
+
+                        missing_muon_keys.append(key)
+
+                        missing_muon_indices.append(
+                            (
+                                ievt,
+                                imu,
+                            )
+                        )
+            
+            elif particle == "electrons":
+                for iele in range(
+                    len(events.Electron[ievt])
+                ):
+
+                    key = (
+                        int(run[ievt]),
+                        int(lumi[ievt]),
+                        int(event[ievt]),
+                        int(iele),
+                    )
+
+                    if key not in cached_keys:
+
+                        missing_electron_keys.append(key)
+
+                        missing_electron_indices.append(
+                            (
+                                ievt,
+                                iele,
+                            )
+                        )
+            
+            else:
+                raise ValueError(
+                    f"Input particle is '{particle}', but the only valid options are 'muons' or 'electrons'"
+                    "Check the object_selections.py and the hww config file to debug."
+                )
 
         # --------------------------------------------------------
         # Calculate missing scores
-        # --------------------------------------------------------
+        # -------------------------------------------------------- 
+        new_rows = []
         
-        if missing_indices:
-
+        if missing_muon_indices:
+            print("Calculating missing muon MVA scores.")
             scores = self._calculate_scores(
                 events,
-                missing_indices,
+                missing_muon_indices,
+                "muons",
             )
 
-            new_cache = pd.DataFrame(
+            muon_cache = pd.DataFrame(
                 {
                     "run": [
                         key[0]
-                        for key in missing_keys
+                        for key in missing_muon_keys
                     ],
                     "lumi": [
                         key[1]
-                        for key in missing_keys
+                        for key in missing_muon_keys
                     ],
                     "event": [
                         key[2]
-                        for key in missing_keys
+                        for key in missing_muon_keys
                     ],
                     "muon": [
                         key[3]
-                        for key in missing_keys
+                        for key in missing_muon_keys
                     ],
-                    "tthMVA": scores,
+                    "muon_tthMVA": scores,
+                    "electron": [
+                        None
+                        for key in missing_muon_keys
+                    ],
+                    "electron_tthMVA": [ 
+                        None
+                        for key in missing_muon_keys
+                    ],
                 }
             )
-            tmp_file = cache_file.with_name(
-                f"{cache_file.stem}.{uuid.uuid4().hex}.parquet"
+            new_rows.append(muon_cache)
+
+        if missing_electron_indices:
+            print("Calculating missing electron MVA scores.")
+            scores = self._calculate_scores(
+                events,
+                missing_electron_indices,
+                "electrons",
             )
+
+            electron_cache = pd.DataFrame(
+                {
+                    "run": [
+                        key[0]
+                        for key in missing_electron_keys
+                    ],
+                    "lumi": [
+                        key[1]
+                        for key in missing_electron_keys
+                    ],
+                    "event": [
+                        key[2]
+                        for key in missing_electron_keys
+                    ],
+                    "muon": [
+                        None
+                        for key in missing_electron_keys
+                    ],
+                    "muon_tthMVA": [
+                        None
+                        for key in missing_electron_keys
+                    ],
+                    "electron": [
+                        key[3]
+                        for key in missing_electron_keys
+                    ],
+                    "electron_tthMVA": scores,
+                }
+            )
+            new_rows.append(electron_cache)
+        
+        # --------------------------------------------------------
+        # Add newly calculated scores to cache
+        # --------------------------------------------------------
+        if new_rows:
+
+            # Combine all scores calculated by this worker
+            new_cache = pd.concat(
+                new_rows,
+                ignore_index=True,
+            )
+
+            # ----------------------------------------------------
+            # Write worker-specific temporary cache
+            # ----------------------------------------------------
+            tmp_file = cache_file.with_name(
+                f"{cache_file.stem}.{os.getpid()}.{uuid.uuid4().hex}.tmp.parquet"
+            )
+
+            print(  
+                f"Writing {len(new_cache)} new MVA scores "
+                f"to temporary cache: {tmp_file}"
+            )
+
             new_cache.to_parquet(
                 tmp_file,
                 index=False,
             )
-            with FileLock(str(cache_file) + ".lock"):
-        
+
+            # ----------------------------------------------------
+            # Merge temporary cache into shared cache
+            # ----------------------------------------------------
+            lock_file = Path(str(cache_file) + ".lock")
+
+            print(f"Waiting for cache lock: {lock_file}")
+
+            with FileLock(str(lock_file)):
+
+                print(f"Acquired cache lock: {lock_file}")
+
+                # Another worker may have updated the cache while
+                # this worker was calculating its MVA scores.
                 if cache_file.exists():
-                    cache = pd.read_parquet(cache_file)
+
+                    cache = pd.read_parquet(
+                        cache_file
+                    )
+
                 else:
+
                     cache = pd.DataFrame(
                         columns=[
                             "run",
                             "lumi",
                             "event",
                             "muon",
-                            "tthMVA",
+                            "muon_tthMVA",
+                            "electron",
+                            "electron_tthMVA",
                         ]
                     )
-        
-                tmp = pd.read_parquet(tmp_file)
-        
-                cache = pd.concat(
-                    [cache, tmp],
-                    ignore_index=True,
+
+                # Read this worker's newly calculated scores
+                tmp = pd.read_parquet(
+                    tmp_file
                 )
-        
+
+                print(
+                    f"Merging {len(tmp)} new rows "
+                    f"into cache containing {len(cache)} rows."
+                )
+
+                if cache.empty:
+                    cache = tmp.copy()
+                else:
+                    cache = pd.concat(
+                        [cache, tmp],
+                        ignore_index=True,
+                    )
+
+                # ------------------------------------------------
+                # Remove duplicate lepton entries
+                #
+                # The combination of run/lumi/event/muon/electron
+                # uniquely identifies a lepton.
+                # ------------------------------------------------
                 cache = cache.drop_duplicates(
-                    subset=["run", "lumi", "event", "muon"],
+                    subset=[
+                        "run",
+                        "lumi",
+                        "event",
+                        "muon",
+                        "electron",
+                    ],
                     keep="last",
                 )
-        
+
+                print(
+                    f"Saving merged cache with {len(cache)} rows."
+                )
+
                 cache.to_parquet(
                     cache_file,
                     index=False,
                 )
-        
+
+                # Temporary file is no longer needed
                 tmp_file.unlink()
+
+                print(
+                    f"Released cache lock: {lock_file}"
+                )
+
 
         # --------------------------------------------------------
         # Build lookup
         # --------------------------------------------------------
+        
+        if particle == "muons":
+            lookup = {
+                (
+                    int(row.run),
+                    int(row.lumi),
+                    int(row.event),
+                    int(row.muon),
+                ): np.float32(row.muon_tthMVA)
+                for row in cache.itertuples(index=False)
+                if pd.notna(row.muon)
+            }
 
-        lookup = {
-            (
-                int(row.run),
-                int(row.lumi),
-                int(row.event),
-                int(row.muon),
-            ): np.float32(row.tthMVA)
+        elif particle == "electrons":
+            lookup = {
+                (
+                    int(row.run),
+                    int(row.lumi),
+                    int(row.event),
+                    int(row.electron),
+                ): np.float32(row.electron_tthMVA)
+                for row in cache.itertuples(index=False)
+                if pd.notna(row.electron)
+            }
 
-            for row in cache.itertuples(
-                index=False
+        else:
+            raise ValueError(
+                f"Input partcile is '{particle}', but the only valid options are 'muons' or 'electrons'"
+                "Check the object_selections.py and the hww config file to debug."
             )
-        }
 
         # --------------------------------------------------------
         # Construct Awkward array
@@ -372,20 +620,40 @@ class TTHMVACache:
         for ievt in range(len(events)):
 
             scores = []
+            if particle == "muons":
+                for imu in range(
+                    len(events.Muon[ievt])
+                ):
 
-            for imu in range(
-                len(events.Muon[ievt])
-            ):
+                    key = (
+                        int(run[ievt]),
+                        int(lumi[ievt]),
+                        int(event[ievt]),
+                        int(imu),
+                    )
 
-                key = (
-                    int(run[ievt]),
-                    int(lumi[ievt]),
-                    int(event[ievt]),
-                    int(imu),
-                )
+                    scores.append(
+                        lookup[key]
+                    )
+            elif particle == "electrons":
+                for iele in range(
+                    len(events.Electron[ievt])
+                ):
 
-                scores.append(
-                    lookup[key]
+                    key = (
+                        int(run[ievt]),
+                        int(lumi[ievt]),
+                        int(event[ievt]),
+                        int(iele),
+                    )
+
+                    scores.append(
+                        lookup[key]
+                    )
+            else:
+                raise ValueError(
+                    f"Input partcile is '{particle}', but the only valid options are 'muons' or 'electrons'"
+                    "Check the object_selections.py and the hww config file to debug."
                 )
 
             output.append(scores)
