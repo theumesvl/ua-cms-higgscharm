@@ -82,7 +82,12 @@ if __name__ == "__main__":
 
     # open dataset configs
     filesets_dir = Path.cwd() / "analysis" / "filesets"
-    datasets_dir = filesets_dir / f"{args.year}_nanov12.yaml"
+    if args.year in ["2022preEE", "2022postEE", "2023preBPix", "2023postBPix"]:
+        datasets_dir = filesets_dir / f"{args.year}_nanov12.yaml"
+    elif args.year in ["2016preVFP", "2016postVFP", "2017", "2018"]:
+        datasets_dir = filesets_dir / f"{args.year}_nanov9.yaml"
+    else:
+        datasets_dir = filesets_dir / f"{args.year}_nanov15.yaml"
     with open(datasets_dir, "r") as f:
         dataset_configs = yaml.safe_load(f)
 
