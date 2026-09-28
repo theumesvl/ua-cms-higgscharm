@@ -14,10 +14,13 @@ datasets:
     - v+jets
     - gghtoww
     - vbfhtoww
+    - whtoww
     - zh
     - ggzh
     - gghto2tau
     - vbfhto2tau
+    - whto2tau
+    - zhto2tau
     - tthnonbb
     - tthtobb
     - hc
