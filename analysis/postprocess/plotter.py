@@ -69,24 +69,41 @@ class CoffeaPlotter:
     def get_histogram(
         self,
         variable,
+        process,
         variation,
         category,
         histogram,
+        denomUnit,
         other_category=None,
     ):
         """returns histogram by processes/variable/category"""
         # get variable histogram for nominal variation and category
-        selector = {"variation": variation}
-        if "category" in histogram.axes.name:
-            selector["category"] = category
-        if self.pass_axis:
-            selector[self.pass_axis] = True
-        if other_category is not None:
-            selector[self.group_by["name"]] = other_category
-        histogram = histogram[selector].project(variable)
-        # if axis type is variable divide by bin width
-        if isinstance(self.histogram_config.axes[variable], VariableAxis):
-            histogram = divide_by_binwidth(histogram)
+        if (
+            "variation" in histogram.axes.name
+            and variation not in histogram.axes["variation"]
+        ):
+            logging.warning(
+                f"Variation '{variation}' missing for histogram {variable}. "
+                f"Returning empty histogram. Check that this variation is really just a consequence of zero events passing the selection for this particular process: {process}."
+            )
+            histogram = histogram.project(variable)
+        else: 
+            selector = {"variation": variation}
+            if "category" in histogram.axes.name:
+                selector["category"] = category
+            if self.pass_axis:
+                selector[self.pass_axis] = True
+            if other_category is not None:
+                selector[self.group_by["name"]] = other_category
+            #print("axes:") # print axes for testing
+            #for ax in histogram.axes:
+            #    print(ax.name, list(ax) if hasattr(ax, "__iter__") else ax)
+            
+            #print("selector =", selector) # print selector for testing
+            histogram = histogram[selector].project(variable)
+            # if axis type is variable divide by bin width
+            if isinstance(self.histogram_config.axes[variable], VariableAxis):
+                histogram = divide_by_binwidth(histogram, denomUnit)
         return histogram
 
     def get_variations(
@@ -95,6 +112,7 @@ class CoffeaPlotter:
         category,
         variation,
         histogram,
+        denomUnit,
     ):
         """returns variation histogram by processes/variable/category"""
         # get variable histogram for nominal variation and category
@@ -110,16 +128,16 @@ class CoffeaPlotter:
         histogram_down = histogram[selectordown].project(variable)
         # if axis type is variable divide by bin width
         if isinstance(self.histogram_config.axes[variable], VariableAxis):
-            histogram_up = divide_by_binwidth(histogram_up)
-            histogram_down = divide_by_binwidth(histogram_down)
+            histogram_up = divide_by_binwidth(histogram_up, denomUnit)
+            histogram_down = divide_by_binwidth(histogram_down, denomUnit)
         return histogram_up, histogram_down
 
-    def collect_histograms_for_plotting(self, variable, category):
+    def collect_histograms_for_plotting(self, variable, category, signal_scale = 1, denomUnit = 1):
         histogram_info = {}
         if "mc" in self.datasets:
             histogram_info["mc"] = {"nominal": {}, "variations": {}}
-        if True: #"signal" in self.datasets:
-            histogram_info["signal"] = {"nominal": {}}
+        if signal_scale != 1: #"signal" in self.datasets:
+            histogram_info["signal"] = {"nominal": {}, "variations": {}}
         if self.group_by != "process":
             histogram_info["categories"] = {}
 
@@ -135,14 +153,16 @@ class CoffeaPlotter:
             if process == "Data":
                 histogram_info["data"] = self.get_histogram(
                     variable=variable,
+                    process=process,
                     category=category,
                     variation="nominal",
                     histogram=aux_histogram,
+                    denomUnit=denomUnit,
                 )
             else:
                 key = self.process_era_map[process]
-                if(process=="H+c"):
-                    key="signal"
+                #if(process=="H+c"):
+                    #key="signal"
                 if self.group_by != "process":
                     cat_axis = aux_histogram.axes[self.group_by["name"]]
                     self.category_map = {cat_axis.index(cat): cat for cat in cat_axis}
@@ -152,17 +172,21 @@ class CoffeaPlotter:
                             histogram_info["categories"][cat] = {}
                         histogram_info["categories"][cat][process] = self.get_histogram(
                             variable=variable,
+                            process=process,
                             category=category,
                             variation="nominal",
                             other_category=cat,
                             histogram=aux_histogram,
+                            denomUnit=denomUnit,
                         )
                 else:
                     histogram_info[key]["nominal"][process] = self.get_histogram(
                         variable=variable,
+                        process=process,
                         category=category,
                         variation="nominal",
                         histogram=aux_histogram,
+                        denomUnit=denomUnit,
                     )
 
                 # save variations histograms
@@ -176,6 +200,7 @@ class CoffeaPlotter:
                             category=category,
                             variation=variation,
                             histogram=aux_histogram,
+                            denomUnit=denomUnit,
                         )
                         if f"{variation}Up" in histogram_info[key]["variations"]:
                             histogram_info[key]["variations"][f"{variation}Up"] += up
@@ -183,6 +208,35 @@ class CoffeaPlotter:
                         else:
                             histogram_info[key]["variations"][f"{variation}Up"] = up
                             histogram_info[key]["variations"][f"{variation}Down"] = down
+                            
+                signalprocess = "H+c"
+                if process == signalprocess and signal_scale != 1:
+                    key = "signal"
+                    for variation in get_variations_keys(self.processed_histograms):
+                        var_cats = [v for v in aux_histogram.axes["variation"]]
+                        if not f"{variation}Up" in var_cats:
+                            continue
+                        up, down = self.get_variations(
+                            variable=variable,
+                            category=category,
+                            variation=variation,
+                            histogram=aux_histogram,
+                            denomUnit=denomUnit,
+                        )
+                        if f"{variation}Up" in histogram_info[key]["variations"]:
+                            histogram_info[key]["variations"][f"{variation}Up"] += up
+                            histogram_info[key]["variations"][f"{variation}Down"] += down
+                        else:
+                            histogram_info[key]["variations"][f"{variation}Up"] = up
+                            histogram_info[key]["variations"][f"{variation}Down"] = down
+                    histogram_info[key]["nominal"][process] = self.get_histogram(
+                        variable=variable,
+                        process=process,
+                        category=category,
+                        variation="nominal",
+                        histogram=aux_histogram,
+                        denomUnit=denomUnit,
+                    )
 
         return histogram_info
 
@@ -191,7 +245,7 @@ class CoffeaPlotter:
         mcstat_err2 = self.nominal_variances
         err2_up = mcstat_err2
         err2_down = mcstat_err2
-
+        #print(get_variations_keys(self.processed_histograms))
         for variation in get_variations_keys(self.processed_histograms):
             # Up/down variations for a single MC sample
             var_up = histogram_info["mc"]["variations"][f"{variation}Up"].values()
@@ -325,10 +379,10 @@ class CoffeaPlotter:
             )
         )
 
-    def add_xylabels(self, variable, category, add_ratio, ax, rax):
+    def add_xylabels(self, variable, category, add_ratio, ax, rax, denomUnit = 1):
         ylabel = "Events"
         if isinstance(self.histogram_config.axes[variable], VariableAxis):
-            ylabel += " / GeV"
+            ylabel += f" / ({denomUnit} GeV)"
 
         xlabel = self.histogram_config.axes[variable].label
 
@@ -353,10 +407,12 @@ class CoffeaPlotter:
         variable: str,
         category: str,
         yratio_limits: str = None,
+        signal_scale: float = 1,
         log: bool = False,
         add_ratio: bool = True,
         blind: bool = False,
         extension: str = "png",
+        denomUnit: float = 1,
     ):
         if blind:
             add_ratio = False
@@ -368,7 +424,7 @@ class CoffeaPlotter:
         plt.rcParams.update(self.style["rcParams"])
 
         # get mc, data and signal histograms
-        histogram_info = self.collect_histograms_for_plotting(variable, category)
+        histogram_info = self.collect_histograms_for_plotting(variable, category, signal_scale, denomUnit)
 
         # get nominal MC histograms
         mc_colors, mc_labels = [], []
@@ -447,19 +503,31 @@ class CoffeaPlotter:
                 ax=ax,
                 **self.style["data_hist_kwargs"],
             )
-        if True: #"signal" in self.datasets:
-            signal_scale = 10000
-            for signal_process, signal_histogram in histogram_info["signal"][
-                "nominal"
-            ].items():
-                hep.histplot(
-                    signal_histogram * signal_scale,
-                    label=f"{signal_process} x{signal_scale}",
-                    color=self.color_map[signal_process],
-                    flow="none",
-                    ax=ax,
-                    **self.style["signal_hist_kwargs"],
-                )
+        if signal_scale != 1: #"signal" in self.datasets:
+            if "signal" in histogram_info:
+                for signal_process, signal_histogram in histogram_info["signal"][
+                    "nominal"
+                ].items():
+                    hep.histplot(
+                        signal_histogram * signal_scale,
+                        label=f"{signal_process} x {str(float(signal_scale))}",
+                        color=self.color_map[signal_process], # use bright red as signal
+                        flow="none",
+                        ax=ax,
+                        **self.style["signal_hist_kwargs"],
+                    )
+            if "H+c" in histogram_info:
+                for signal_process, signal_histogram in histogram_info["H+c"][
+                    "nominal"
+                ].items():
+                    hep.histplot(
+                        signal_histogram * signal_scale,
+                        label=f"{signal_process} x {str(float(signal_scale))}",
+                        color=self.color_map[signal_process], # use bright red as signal
+                        flow="none",
+                        ax=ax,
+                        **self.style["signal_hist_kwargs"],
+                    )
 
         # plot uncertainty band
         self.plot_uncert_band(histogram_info, ax)
@@ -479,7 +547,7 @@ class CoffeaPlotter:
             rax.set_ylim(yratio_limits)
 
         # set axes labels
-        self.add_xylabels(variable, category, add_ratio, ax, rax)
+        self.add_xylabels(variable, category, add_ratio, ax, rax, denomUnit)
 
         # set plot text
         self.add_text(variable, category, ax)
@@ -508,8 +576,11 @@ class CoffeaPlotter:
                     if i % 5 != 0:  # Show only every 5th tick
                         label.set_visible(False)
         # add CMS info
+        lumi = self.luminosities[self.year] * 1e-3
+        energy = "13" if self.year.startswith("201") else "13.6"
+        lumitext = f"{lumi:.1f} fb$^{{-1}}$ ({self.year}, {energy} TeV)" if "20" in self.year else f"{lumi:.1f} fb$^{{-1}}$ ({energy} TeV)"
         hep.cms.lumitext(
-            f"{self.luminosities[self.year] * 1e-3:.1f} fb$^{{-1}}$ ({self.year}, 13.6 TeV)",
+            lumitext,
             ax=ax,
         )
         hep.cms.text("Preliminary", ax=ax)

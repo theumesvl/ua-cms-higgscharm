@@ -55,6 +55,8 @@ def parse_arguments():
             "2022postEE",
             "2023preBPix",
             "2023postBPix",
+            "2022-2023",
+            "2024"
         ],
         help="Data year",
     )
@@ -93,6 +95,18 @@ def parse_arguments():
     )
     parser.add_argument(
         "--nocutflow", action="store_true", help="Enable postprocessing"
+    )
+    parser.add_argument(
+        "--signal_scale",
+        type=float,
+        default=1,
+        help="scale the signal by a factor, default of 1, and add it as a separate line plot. The line plot is added only when signal_scale is not 1.",
+    )
+    parser.add_argument(
+        "--denomUnit",
+        type=float,
+        default=1,
+        help="For dividing the number of events in plots with variable binnins buy the width of the bin, the standard is to divide by 1 GeV. Here you can change it to divide by <denomUnit> GeV. This increases the number of events shown on the y axis by a factor <denomUnit>.",
     )
     parser.add_argument(
         "--output_format",
@@ -254,7 +268,7 @@ if __name__ == "__main__":
     if "data" not in workflow_config.datasets:
         args.blind = True
 
-    if args.postprocess and (args.year not in ["2022", "2023"]):
+    if args.postprocess and (args.year not in ["2022", "2023", "2022-2023"]):
         print_header(f"Running postprocess for {args.year}")
         logging.info(f"Reading outputs from: {output_dir}")
 
@@ -262,6 +276,7 @@ if __name__ == "__main__":
             f
             for f in glob.glob(f"{output_dir}/*/*.coffea", recursive=False)
             if not Path(f).stem.startswith("cutflow")
+            and not Path(f).stem.startswith("unweighted_cutflow")
             and not Path(f).stem.startswith("processed")
             and not Path(f).stem.startswith("combined")
         ]
@@ -354,6 +369,34 @@ if __name__ == "__main__":
                 cutflow_df.to_csv(f"{category_dir}/cutflow_{category}.csv")
                 logging.info("\n")
 
+                # cutflow with unweighted number of events
+                print_header(f"Unweighted cutflow")
+                cutflow_df_unweighted = pd.DataFrame()
+                for process in process_samples_map:
+                    cutflow_file_unweighted = category_dir / f"unweighted_cutflow_{category}_{process}.csv"
+                    cutflow_df_unweighted = pd.concat(
+                        [cutflow_df_unweighted, pd.read_csv(cutflow_file_unweighted, index_col=[0])], axis=1
+                    )
+
+                total_background = cutflow_df_unweighted.drop(columns=columns_to_drop).sum(axis=1)
+                cutflow_df_unweighted["Total Background"] = total_background
+
+                cutflow_df_unweighted = cutflow_df_unweighted.loc[cutflow_index]
+
+                cutflow_df_unweighted = cutflow_df_unweighted[
+                    to_process
+                    + [
+                        process
+                        for process in cutflow_df_unweighted.columns
+                        if process not in to_process
+                    ]
+                ]
+                logging.info(
+                    f'{cutflow_df_unweighted.applymap(lambda x: f"{x:.3f}" if pd.notnull(x) else "")}\n'
+                )
+                cutflow_df_unweighted.to_csv(f"{category_dir}/unweighted_cutflow_{category}.csv")
+                logging.info("\n")
+                
             if args.workflow in ["ztoee", "ztomumu"]:
                 print_header(f"Results")
                 results_df = get_results_report(
@@ -373,17 +416,19 @@ if __name__ == "__main__":
                 latex_table = df_to_latex(results_df, args.blind)
                 with open(category_dir / f"results_{category}.txt", "w") as f:
                     f.write(latex_table)
+
+        processed_histograms = load_processed_histograms(
+            args.year,
+            output_dir,
+            process_samples_map,
+        )
         # Generate filelists for MVA training (hww workflow only) -> here postprocessing needs to be done already
     if args.mva:
         generate_all_filelists(output_dir, categories, list(process_samples_map.keys()))
 
-    processed_histograms = load_processed_histograms(
-        args.year,
-        output_dir,
-        process_samples_map,
-    )
 
-    if args.year in ["2022", "2023"]:
+
+    if args.year in ["2022", "2023", "2022-2023"]:
         if args.postprocess:
             print_header(f"Running postprocess for {args.year}")
             # load and accumulate processed histograms
@@ -392,7 +437,8 @@ if __name__ == "__main__":
                 processed_histograms,
                 f"{output_dir}/{args.year}_processed_histograms.coffea",
             )
-            identifier = "EE" if args.year == "2022" else "BPix"
+            if not args.year == "2022-2023":
+                identifier = "EE" if args.year == "2022" else "BPix"
             for category in categories:
                 logging.info(f"category: {category}")
                 category_dir = OUTPUT_DIR / args.workflow / args.year / category
@@ -535,6 +581,8 @@ if __name__ == "__main__":
                         variable=variable,
                         category=category,
                         yratio_limits=args.yratio_limits,
+                        signal_scale=args.signal_scale,
+                        denomUnit=args.denomUnit,
                         log=args.log,
                         extension=args.extension,
                         blind=args.blind,
@@ -545,4 +593,3 @@ if __name__ == "__main__":
                 f"tar -zcvf {output_dir}/{category}/{args.workflow}_{args.year}_plots.tar.gz {output_dir}/{category}/*.{args.extension}",
                 shell=True,
             )
-

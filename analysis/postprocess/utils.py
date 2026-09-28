@@ -81,9 +81,9 @@ def print_header(text):
     logging.info("-" * 90)
 
 
-def divide_by_binwidth(histogram):
+def divide_by_binwidth(histogram, denomUnit = 1):
     bin_width = histogram.axes.edges[0][1:] - histogram.axes.edges[0][:-1]
-    return histogram / bin_width
+    return histogram / bin_width * denomUnit
 
 
 def clear_output_directory(output_dir, ext):
@@ -188,25 +188,37 @@ def accumulate_metadata(grouped_outputs, sample):
 def accumulate_histograms(grouped_outputs, sample):
     grouped_histograms = []
     for fname in grouped_outputs[sample]:
-        output = load(fname)
+        try:
+            output = load(fname)
+        except Exception as e:
+            print(f"Failed file: {fname}")
+            raise
         if output:
             grouped_histograms.append(output["histograms"])
     return accumulate(grouped_histograms)
 
 
 def get_lumi_weight(year, sample, metadata):
-    lumi_file = Path.cwd() / "analysis" / "postprocess" / "luminosity.yaml"
-    with open(lumi_file, "r") as f:
-        luminosities = yaml.safe_load(f)
-
     dataset_config = get_dataset_config(year)
-    xsec = dataset_config[sample]["xsec"]
     sumw = metadata["sumw"]
-    weight = 1
-    if dataset_config[sample]["era"] in ["mc", "signal"]:
-        weight = (luminosities[year] * xsec) / sumw
+    if sample not in dataset_config:
+        logging.warning(
+            f"Sample '{sample}' not found in dataset configuration for year '{year}'. "
+            "Setting weight and xsec for this sample to 0."
+        )
+        weight = 0
+        xsec = 0
+    else:
+        lumi_file = Path.cwd() / "analysis" / "postprocess" / "luminosity.yaml"
+        with open(lumi_file, "r") as f:
+            luminosities = yaml.safe_load(f)
+        
+        xsec = dataset_config[sample]["xsec"]
+        weight = 1
+        if dataset_config[sample]["era"] in ["mc", "signal"]:
+            weight = (luminosities[year] * xsec) / sumw
 
-    logging.info(f"luminosity [1/pb]: {luminosities[year]}")
+        logging.info(f"luminosity [1/pb]: {luminosities[year]}")
     logging.info(f"xsec [pb]: {xsec}")
     logging.info(f"sumw: {sumw}")
     logging.info(f"weight: {weight}")
@@ -220,7 +232,7 @@ def save_cutflows(metadata, categories, sample, weight, output_dir):
             logging.info(f"zero events for category {category}")
             continue
 
-        logging.info(f"saving {sample} cutflow for category {category}")
+        logging.info(f"saving {sample} cutflow (weighted) and unweighted cutflow for category {category}")
 
         category_dir = Path(output_dir) / category
         if not category_dir.exists():
@@ -230,9 +242,16 @@ def save_cutflows(metadata, categories, sample, weight, output_dir):
             cut: nevents * weight
             for cut, nevents in metadata[category]["cutflow"].items()
         }
+        nonscaled_cutflow = {
+            cut: nevents 
+            for cut, nevents in metadata[category]["cutflow"].items()
+        }
         processed_cutflow = {sample: scaled_cutflow}
+        unweighted_cutflow = {sample: nonscaled_cutflow}
         cutflow_file = category_dir / f"cutflow_{category}_{sample}.coffea"
+        unweighted_cutflow_file = category_dir / f"unweighted_cutflow_{category}_{sample}.coffea"
         save(processed_cutflow, cutflow_file)
+        save(unweighted_cutflow, unweighted_cutflow_file)
 
 
 def get_process_dict(output_dir, year, categories):
@@ -297,12 +316,17 @@ def accumulate_and_save_cutflows(process, process_samples_map, output_dir, categ
     for category in categories:
         category_dir = Path(f"{output_dir}/{category}")
         df_total = pd.DataFrame()
+        df_total_unweighted = pd.DataFrame()
 
         for sample in process_samples_map[process]:
             cutflow_file = category_dir / f"cutflow_{category}_{sample}.coffea"
             if cutflow_file.exists():
                 df_sample = pd.DataFrame(load(cutflow_file).values())
                 df_total = pd.concat([df_total, df_sample])
+            unweighted_cutflow_file = category_dir / f"unweighted_cutflow_{category}_{sample}.coffea"
+            if unweighted_cutflow_file.exists():
+                df_sample_unweighted = pd.DataFrame(load(unweighted_cutflow_file).values())
+                df_total_unweighted = pd.concat([df_total_unweighted, df_sample_unweighted])
 
         if not df_total.empty:
             cutflow_df = pd.DataFrame(df_total.sum())
@@ -312,6 +336,14 @@ def accumulate_and_save_cutflows(process, process_samples_map, output_dir, categ
                 f"Saving cutflow for process {process} and category {category}"
             )
             cutflow_df.to_csv(cutflow_csv)
+        if not df_total_unweighted.empty:
+            cutflow_df_unweighted = pd.DataFrame(df_total_unweighted.sum())
+            cutflow_df_unweighted.columns = [process]
+            cutflow_csv_unweighted = category_dir / f"unweighted_cutflow_{category}_{process}.csv"
+            logging.info(
+                f"Saving unweighted cutflow for process {process} and category {category}"
+            )
+            cutflow_df_unweighted.to_csv(cutflow_csv_unweighted)
 
 
 def load_processed_histograms(
@@ -611,4 +643,3 @@ def generate_all_filelists(output_dir: Path, categories: list, process_names: li
         if filelist_path:
             filelists[category] = filelist_path
     return filelists
-
