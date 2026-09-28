@@ -53,6 +53,7 @@ class ElectronWeights:
         self.cset_promptMVA = correctionlib.CorrectionSet.from_file(
             correction_files["electron_HWW"][year]
         )
+        print(correction_files["electron_HWW"][year])
         self.cset_reco = correctionlib.CorrectionSet.from_file(
             correction_files["electron_reco"][year]
         )
@@ -210,9 +211,8 @@ class ElectronWeights:
             "2022preEE": "2022Re-recoBCD",
             "2023preBPix": "2023PromptC",
             "2023postBPix": "2023PromptD",
-            "2024": "2024PromptCDE+Re-recoFGHI",
+            "2024": "2024",
         }
-        print(cset_id)
         cset_args = [
             year_map.get(self.year, self.year),
             variation,
