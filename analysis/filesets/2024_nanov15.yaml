@@ -382,7 +382,7 @@ WZto3LNu:
   era: mc
   query: WZto3LNu_TuneCP5_13p6TeV_powheg-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM
   process: WZ
-  key: wz
+  key: wz-excl
   xsec: 4.924
 ZZto4L:
   era: mc
@@ -552,3 +552,107 @@ WGtoLNuG_PTG600:
   process: WG 
   key: wg-excl
   xsec: 0.004734
+GluGluHto2Wto2L2Nu:
+  era: mc
+  query: GluGluHto2Wto2L2Nu_Par-M-125_TuneCP5_13p6TeV_powheg-jhugen-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM
+  process: ggH
+  key: gghtoww
+  xsec: 1.0825
+VBFHto2Wto2L2Nu:
+  era: mc
+  query: VBFHto2Wto2L2Nu_Par-M-125_TuneCP5_13p6TeV_powheg-jhugen-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM
+  process: VBF
+  key: vbfhtoww
+  xsec: 0.09305
+WplusH_WtoLNu_Hto2Wto2L2Nu:
+  era: mc
+  query: WplusH-WtoLNu-Hto2Wto2L2Nu_Par-M-125_TuneCP5_13p6TeV_powhegMINLO-jhugen-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM
+  process: WH
+  key: whtoww
+  xsec: 0.006625105011
+WplusH_Wto2Q_Hto2Wto2L2Nu:
+  era: mc
+  query: WplusH_Wto2Q_Hto2Wto2L2Nu_M-125_Par-M-125_TuneCP5_13p6TeV_powhegMINLO-jhugen-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM
+  process: WH
+  key: whtoww
+  xsec: 0.01365173154
+WminusH_WtoLNu_Hto2Wto2L2Nu:
+  era: mc
+  query: WminusH-WtoLNu-Hto2Wto2L2Nu_Par-M-125_TuneCP5_13p6TeV_powhegMINLO-jhugen-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM
+  process: WH
+  key: whtoww
+  xsec: 0.004231339845 
+WminusH_Wto2Q_Hto2Wto2L2Nu:
+  era: mc
+  query: WminusH-Wto2Q-Hto2Wto2L2Nu_Par-M-125_TuneCP5_13p6TeV_powhegMINLO-jhugen-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM
+  process: WH
+  key: whtoww
+  xsec: 0.008719124529
+  
+ZH_Zto2L_Hto2Wto2L2Nu:
+  era: mc
+  query: ZH-Zto2L-Hto2Wto2L2Nu_Par-M-125_TuneCP5_13p6TeV_powhegMINLO-jhugen-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM
+  process: ZH
+  key: zh
+  xsec: 0.02155935151
+ZH_Zto2Q_Hto2Wto2L2Nu:
+  era: mc
+  query: ZH-Zto2Q-Hto2Wto2L2Nu_Par-M-125_TuneCP5_13p6TeV_powhegMINLO-jhugen-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM
+  process: ZH
+  key: zh
+  xsec: 0.02155935151
+GluGluZH_Zto2L_Hto2Wto2L2Nu:
+  era: mc
+  query: GluGluZH-Zto2L-Hto2Wto2L2Nu_Par-M-125_TuneCP5_13p6TeV_powhegMINLO-jhugen-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM
+  process: ggZH
+  key: ggzh
+  xsec: 0.00309424433
+GluGluZH_Zto2Q_Hto2Wto2L2Nu:
+  era: mc
+  query: GluGluZH-Zto2Q-Hto2Wto2L2Nu_Par-M-125_TuneCP5_13p6TeV_powhegMINLO-jhugen-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM
+  process: ggZH
+  key: ggzh
+  xsec: 0.00309424433
+ttHtoNonBB:
+  era: mc
+  query: TTH-HtoNon2B_Par-M-125_TuneCP5_13p6TeV_powheg-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM
+  process: ttHnonBB
+  key: tthnonbb
+  xsec: 0.5742
+  
+ttHtoBB:
+  era: mc
+  query: TTH-Hto2B_Par-M-125_TuneCP5_13p6TeV_powheg-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM
+  process: ttHtoBB
+  key: tthtobb
+  xsec: 0.332585344
+GluGluHto2Tau:
+  era: mc
+  query: GluGluHto2Tau_Par-M-125_TuneCP5_13p6TeV_powhegMINNLO-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM
+  process: ggH
+  key: gghto2tau
+  xsec: 2.9766912
+VBFHToTauTau:
+  era: mc
+  query: VBFH-HTo2Tau_Par-M-125_TuneCP5_13p6TeV_powheg-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM
+  process: VBF
+  key: vbfhto2tau
+  xsec: 0.255872512
+WminusHTo2Tau:
+  era: mc
+  query: WminusH-Hto2TauUncorrelatedDecay_Par-M-125_TuneCP5_13p6TeV_powhegMINNLO-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM
+  process: WH
+  key: whto2tau
+  xsec: 0.0356149248
+WplusHTo2Tau:
+  era: mc
+  query: WplusH-Hto2TauUncorrelatedDecay_Par-M-125_TuneCP5_13p6TeV_powhegMINNLO-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM
+  process: WH
+  key: whto2tau
+  xsec: 0.0557630976
+ZHTo2Tau:
+  era: mc
+  query: ZH-Hto2TauUncorrelatedDecay_Par-M-125_TuneCP5_13p6TeV_powhegMINNLO-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v6/NANOAODSIM
+  process: ZH
+  key: zhto2tau
+  xsec: 0.0592841984
