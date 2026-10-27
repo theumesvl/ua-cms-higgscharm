@@ -114,7 +114,7 @@ def fill_histograms(
     weights_container,
 ):
     if is_mc:
-        variations = ["nominal"] + list(weights_container.variations)
+        variations = ["nominal"] + sorted(weights_container.variations)
         for variation in variations:
             if variation == "nominal":
                 region_weight = weights_container.weight()
