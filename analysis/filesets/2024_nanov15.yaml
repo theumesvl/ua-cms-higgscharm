@@ -617,7 +617,9 @@ ttHtoNonBB:
   era: mc
   query: TTH-HtoNon2B_Par-M-125_TuneCP5_13p6TeV_powheg-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM
   process: ttHnonBB
-  key: tthnonbb
+  key: 
+    - tthnonbb-incl
+    - tthnonbb
   xsec: 0.5742
   
 ttHtoBB:
@@ -650,6 +652,18 @@ WplusHTo2Tau:
   process: WH
   key: whto2tau
   xsec: 0.0557630976
+WplusHTo2Tau-Filtered:
+  era: mc
+  query: WplusH-Hto2TauUncorrelatedDecay_Fil-TauFilter_Par-M-125_TuneCP5_13p6TeV_powhegMINNLO-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM
+  process: WH
+  key: whto2tau-filtered
+  xsec: 0.0557630976
+WminusHTo2Tau-Filtered:
+  era: mc
+  query: WminusH-Hto2TauUncorrelatedDecay_Fil-TauFilter_Par-M-125_TuneCP5_13p6TeV_powhegMINNLO-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM
+  process: WH
+  key: whto2tau-filtered
+  xsec: 0.0356149248
 ZHTo2Tau:
   era: mc
   query: ZH-Hto2TauUncorrelatedDecay_Par-M-125_TuneCP5_13p6TeV_powhegMINNLO-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v6/NANOAODSIM

@@ -181,7 +181,7 @@ TBbarQ:
 WW:
   era: mc
   query: WW_TuneCP5_13p6TeV_pythia8/Run3Summer22NanoAODv12-130X_mcRun3_2022_realistic_v5-v2/NANOAODSIM
-  process: WW
+  process: Diboson
   key: 
     - ww
     - diboson
@@ -189,7 +189,7 @@ WW:
 WZ:
   era: mc
   query: WZ_TuneCP5_13p6TeV_pythia8/Run3Summer22NanoAODv12-130X_mcRun3_2022_realistic_v5-v2/NANOAODSIM
-  process: WZ
+  process: Diboson
   key: 
     - wz
     - diboson
@@ -197,7 +197,7 @@ WZ:
 ZZ:
   era: mc
   query: ZZ_TuneCP5_13p6TeV_pythia8/Run3Summer22NanoAODv12-130X_mcRun3_2022_realistic_v5-v2/NANOAODSIM
-  process: ZZ
+  process: Diboson
   key: 
     - zz
     - diboson
@@ -436,18 +436,6 @@ VBFHToTauTau:
   process: VBF
   key: vbfhto2tau
   xsec: 0.255872512
-WminusHTo2Tau:
-  era: mc
-  query: WminusHTo2TauUncorrelatedDecay_M-125_TuneCP5_13p6TeV_powheg-minnlo-pythia8/Run3Summer22NanoAODv12-130X_mcRun3_2022_realistic_v5-v2/NANOAODSIM
-  process: WH
-  key: whto2tau
-  xsec: 0.0356149248
-WplusHTo2Tau:
-  era: mc
-  query: WplusHTo2TauUncorrelatedDecay_M-125_TuneCP5_13p6TeV_powheg-minnlo-pythia8/Run3Summer22NanoAODv12-130X_mcRun3_2022_realistic_v5-v2/NANOAODSIM
-  process: WH
-  key: whto2tau
-  xsec: 0.0557630976
 ttHto2C:
   era: mc
   query: ttHto2C_M-125_TuneCP5_13p6TeV_powheg-pythia8/Run3Summer22NanoAODv12-130X_mcRun3_2022_realistic_v5-v2/NANOAODSIM
@@ -466,6 +454,12 @@ ttHtoZG:
   process: ttHnonBB
   key: tthnonbb
   xsec: 0.00087543498
+ttHtoNonBB:
+  era: mc
+  query: TTHtoNon2B_M-125_TuneCP5_13p6TeV_powheg-pythia8/Run3Summer22NanoAODv12-130X_mcRun3_2022_realistic_v5-v4/NANOAODSIM
+  process: ttHnonBB
+  key: tthnonbb-incl
+  xsec: 0.5742
 ttHtoBB:
   era: mc
   query: ttHto2B_M-125_TuneCP5_13p6TeV_powheg-pythia8/Run3Summer22NanoAODv12-130X_mcRun3_2022_realistic_v5-v2/NANOAODSIM
