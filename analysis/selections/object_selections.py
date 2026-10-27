@@ -703,3 +703,25 @@ class ObjectSelector:
             )
 
         self.objects[obj_name] = self.events.Electron
+
+    def select_has_LHE_tautau(self, obj_name):
+        """Select MC events containing at least one opposite-sign LHE tau pair."""
+
+        pdg_id = self.events.LHEPart.pdgId
+
+        # Form every possible pair of LHE particles in each event.
+        pairs = ak.combinations(
+            pdg_id,
+            2,
+            fields=["pdgId1", "pdgId2"],
+        )
+
+        # PDG ID +15 = tau-, PDG ID -15 = tau+.
+        opposite_sign_pair = (
+            ((pairs.pdgId1 == 15) & (pairs.pdgId2 == -15))
+            |
+            ((pairs.pdgId1 == -15) & (pairs.pdgId2 == 15))
+        )
+
+        # True if at least one opposite-sign tau pair exists in the event.
+        self.objects[obj_name] = ak.any(opposite_sign_pair, axis=1)
