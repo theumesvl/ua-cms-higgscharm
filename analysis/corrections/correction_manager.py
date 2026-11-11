@@ -2,6 +2,7 @@ import numpy as np
 from coffea.analysis_tools import Weights
 from analysis.filesets.utils import get_nano_version
 from analysis.corrections.muon import MuonWeights
+from analysis.corrections.trigger import TriggerWeights
 from analysis.corrections.ctag import CTagCorrector
 from analysis.corrections.pileup import add_pileup_weight
 from analysis.corrections.nnlops import add_nnlops_weight
@@ -123,13 +124,19 @@ def weight_manager(pruned_ev, year, dataset, workflow_config, variation="nominal
                                 promptMVA_wp=weights_config["muon"]["promptMVA"],
                             )
                     if "trigger" in weights_config["muon"]:
+                        trigger_weights = TriggerWeights(
+                            events=pruned_ev,
+                            year=year,
+                            variation=variation,
+                            weights=weights_container,
+                        )
                         print("Trying to get trigger corrections")
                         print("Trying to access muon trigger in weights_config")
                         if weights_config["muon"]["trigger"]:
                             print("Muon trigger found in weights_config: adding trigger weights.")
                             if "promptMVA" in weights_config["muon"]:
                                 print("promptMVA found in weights_config for muon.")
-                                muon_weights.add_trigger_weights(
+                                trigger_weights.add_trigger_weights(
                                     dataset=dataset,
                                     id_wp=weights_config["muon"]["id"],
                                     iso_wp=weights_config["muon"]["iso"],
@@ -138,7 +145,7 @@ def weight_manager(pruned_ev, year, dataset, workflow_config, variation="nominal
                                 )
                             else:
                                 print("promptMVA NOT found in weights_config for muon. Setting promptMVA_wp for applying trigger weights to empty string")
-                                muon_weights.add_trigger_weights(
+                                trigger_weights.add_trigger_weights(
                                     dataset=dataset,
                                     id_wp=weights_config["muon"]["id"],
                                     iso_wp=weights_config["muon"]["iso"],
@@ -177,13 +184,27 @@ def weight_manager(pruned_ev, year, dataset, workflow_config, variation="nominal
                             elif nano_version == "15":
                                 electron_weights.add_reco_weights("Reco20to75")
                                 electron_weights.add_reco_weights("RecoAbove75")
-                    if "trigger" in weights_config["electron"]:
+                    if "trigger" in weights_config["electron"]: ### WIP #####
+                        trigger_weights = TriggerWeights(
+                            events=pruned_ev,
+                            year=year,
+                            variation=variation,
+                            weights=weights_container,
+                        ) ######################################
                         if weights_config["electron"]["trigger"]:
                             # no available HLT Sfs for 2024 yet
                             if nano_version != "15":
                                 electron_weights.add_hlt_weights(
                                     id_wp=weights_config["electron"]["id"],
                                 )
+        # trigger weights need to be applied when asked for for electrons and/muons #### WIP
+        """
+        if ("muon" in weights_config):
+            if weights_config["muon"]:
+                if "selected_muons" in pruned_ev.fields:      
+                    
+        elif ("electron" in weights_config):
+        """
 
         if "ctagging" in weights_config:
             if weights_config["ctagging"]:

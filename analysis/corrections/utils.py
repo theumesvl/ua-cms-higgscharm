@@ -1,6 +1,6 @@
 import awkward as ak
 from pathlib import Path
-
+from collections import defaultdict
 
 # summary of pog scale factors: https://cms-analysis-corrections.docs.cern.ch/
 correction_files = {
@@ -171,4 +171,7 @@ def unflat_sf(sf: ak.Array, in_limit_mask: ak.Array, n: ak.Array):
     """
     sf = ak.where(in_limit_mask, sf, ak.ones_like(sf))
     return ak.fill_none(ak.prod(ak.unflatten(sf, n), axis=1), value=1)
+
+def tree():
+    return defaultdict(tree)
 
