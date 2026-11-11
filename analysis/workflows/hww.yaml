@@ -30,8 +30,8 @@ object_selection:
     cuts:
       - events.Muon.pt > 10
       - np.abs(events.Muon.eta) < 2.4
-      - working_points.muon_iso(events, 'tight')
-      - working_points.muon_id(events, 'tight')
+      - working_points.muon_iso(events, 'tight_HWW')
+      - working_points.muon_id(events, 'tight_HWW')
   electrons:
     field: events.Electron
     cuts:
@@ -85,7 +85,7 @@ object_selection:
 event_selection:
   hlt_paths:
     MuonEG:
-      - MuEle
+      - MuEle_HWW
     Muon:
       - SingleMu
     EGamma:
@@ -115,18 +115,13 @@ event_selection:
       - lumimask
       - met_filters
       - trigger
-      - met_45
-      - one_ll_pair
-      - one_muon_one_electron
+      - one_muon
     base_atleast_one_cjet:
       - atleast_one_goodvertex
       - lumimask
       - met_filters
       - trigger
-      - met_45
-      - one_ll_pair
-      - one_muon_one_electron
-      - atleast_one_cjet
+      - one_muon
 corrections:
   objects:
     - jec
@@ -140,9 +135,10 @@ corrections:
     lhescaleWeight: true
     nnlopsWeight: true
     muon:
-      - id: tight
-      - iso: tight
-      - trigger: false
+      - id: tight_HWW
+      - iso: tight_HWW
+      - promptMVA_wp: tight_HWW
+      - trigger: true
     electron:
       - id: wp80iso
       - reco: true

@@ -28,8 +28,8 @@ else:
         "You ran from an unexpected directory. Please run from SWAN (/eos/...), coffea-casa (/home/...) or lxplus (/.../user/...)."
         "Beware that when running from coffea-casa, you have to manually put in the target directory's 'userpath' for writing the tth MVA scores in analysis/tthMVA/cache.py"
     )
-cache_base = Path(f"/eos/user/{userpath}/higgscharm/analysis/data/tthMVA_2022-2023_retrained/tthMVA_cache")
-#cache_base = Path("/home/cms-jovyan/ua-cms-higgscharm/analysis/data/tthMVA_2022-2023_retrained/tthMVA_cache")
+#cache_base = Path(f"/eos/user/{userpath}/higgscharm/analysis/data/tthMVA_2022-2023_retrained/tthMVA_cache")
+cache_base = Path("/home/cms-jovyan/ua-cms-higgscharm/analysis/data/tthMVA_2022-2023_retrained/tthMVA_cache")
 print(f"Your current path to write the tthMVA score cache to is '{cache_base}'")
 
 

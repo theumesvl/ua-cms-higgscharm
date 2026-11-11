@@ -40,6 +40,20 @@ correction_files = {
         "2023postBPix": f"{Path.cwd()}/analysis/data/muon_hlt/2023postBPix_Muon_HLT_Eff.json",
         "2024": f"{Path.cwd()}/analysis/data/muon_hlt/2024_Muon_HLT_Eff.json",
     },
+    "muon_hlt_HWW_mc_eff": { # for these, just the start of the path is given, as the trigger name is in the file name itself, not in the file
+        "2022preEE": f"{Path.cwd()}/analysis/data/muon_HWW_hlt/2022preEE/MC_eff/",
+        "2022postEE": f"{Path.cwd()}/analysis/data/muon_HWW_hlt/2022postEE/MC_eff/",
+        "2023preBPix": f"{Path.cwd()}/analysis/data/muon_HWW_hlt/2023preBPix/MC_eff/",
+        "2023postBPix": f"{Path.cwd()}/analysis/data/muon_HWW_hlt/2023postBPix/MC_eff/",
+        "2024": f"{Path.cwd()}/analysis/data/muon_HWW_hlt/2024/MC_eff/",
+    },
+    "muon_hlt_HWW_data_eff": { # for these, just the start of the path is given, as the trigger name is in the file name itself, not in the file
+        "2022preEE": f"{Path.cwd()}/analysis/data/muon_HWW_hlt/2022preEE/Data_eff/",
+        "2022postEE": f"{Path.cwd()}/analysis/data/muon_HWW_hlt/2022postEE/Data_eff/",
+        "2023preBPix": f"{Path.cwd()}/analysis/data/muon_HWW_hlt/2023preBPix/Data_eff/",
+        "2023postBPix": f"{Path.cwd()}/analysis/data/muon_HWW_hlt/2023postBPix/Data_eff/",
+        "2024": f"{Path.cwd()}/analysis/data/muon_HWW_hlt/2024/Data_eff/",
+    },
     "muon_ss": {
         "2016preVFP": f"{Path.cwd()}/analysis/data/rochester/RoccoR2016preVFPUL.txt",
         "2016postVFP": f"{Path.cwd()}/analysis/data/rochester/RoccoR2016postVFPUL.txt",

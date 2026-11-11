@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 import correctionlib
 import numpy as np
 import awkward as ak
@@ -6,7 +7,8 @@ from typing import Type
 from coffea.analysis_tools import Weights
 from analysis.filesets.utils import get_nano_version
 from analysis.corrections.utils import correction_files, unflat_sf
-
+from analysis.corrections.trigger import *
+from IPython.display import display, JSON
 
 class MuonWeights:
     """
@@ -52,9 +54,21 @@ class MuonWeights:
             correction_files["muon"][year]
         )
         # get muon HLT eff correction set
-        self.cset_eff = correctionlib.CorrectionSet.from_file(
+        self.cset_eff = {}
+        self.cset_eff["mc"] = correctionlib.CorrectionSet.from_file(
             correction_files["muon_hlt"][year]
         )
+        self.cset_eff["data"] = correctionlib.CorrectionSet.from_file(
+            correction_files["muon_hlt"][year]
+        )
+        self.cset_eff["sf"] = correctionlib.CorrectionSet.from_file(
+            correction_files["muon"][year]
+        )
+        self.cset_eff_hlt = correctionlib.CorrectionSet.from_file(
+            correction_files["muon_hlt"][year]
+        )
+        self.cset_eff_data = self.cset_eff_hlt["Muon-HLT-DataEff"]
+        self.cset_eff_mc = self.cset_eff_hlt["Muon-HLT-McEff"]
 
     def add_id_weights(self, id_wp):
         """
@@ -126,14 +140,17 @@ class MuonWeights:
                 weight=nominal_weights,
             )
             
-    def add_trigger_weights(self, id_wp, iso_wp, hlt_paths, dataset):
+    def add_trigger_weights(self, id_wp, iso_wp, promptMVA_wp, hlt_paths, dataset):
         """
         add muon iso weights to weights container
         """
         # get nominal scale factors
+        print("Getting nominal hlt weights.")
         nominal_weights = self.get_hlt_weights(
             id_wp=id_wp,
             iso_wp=iso_wp,
+            promptMVA_wp=promptMVA_wp,
+            hlt_paths=hlt_paths,
             variation="nominal",
         )
         if self.variation == "nominal":
@@ -450,85 +467,119 @@ class MuonWeights:
         )
         return weights
 
-    def get_hlt_weights(self, id_wp, iso_wp, variation):
+            
+    def get_hlt_weights(self, id_wp, iso_wp, promptMVA_wp, hlt_paths, variation):
         """Compute muon HLT weights"""
+        print("Muon working points received for applying muon efficiency scale factors:")
+        if id_wp: print(f"ID: {id_wp}") 
+        if iso_wp: print(f"ISO: {iso_wp}") 
+        if promptMVA_wp: print(f"PromptMVA: {promptMVA_wp}") 
+            
+        flags_with_triggernames = tree()
+        flags_with_triggernames = get_config_trigger_flags(hlt_paths) # get trigger flags listed in workflow config
+        trigger_flags = load_trigger_flags(Path(__file__)) # load file having for each year the trigger flag and corresponding trigger names
+        year_key = get_yearkey_for_trigger_flags(self.year)
+        trigger_types = flags_with_triggernames.keys() # types of trigger: single lepton trigger, double lepton trigger ... defined in analysis/corrections/trigger.py get_config_trigger_flags()
 
-        hlt_path_id_map = {
-            "2016preVFP": "NUM_IsoMu24_or_IsoTkMu24_DEN_CutBasedIdTight_and_PFIsoTight",
-            "2016postVFP": "NUM_IsoMu24_or_IsoTkMu24_DEN_CutBasedIdTight_and_PFIsoTight",
-            "2017": "NUM_IsoMu27_DEN_CutBasedIdTight_and_PFIsoTight",
-            "2018": "NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight",
-            "2022preEE": "NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight",
-            "2022postEE": "NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight",
-            "2023preBPix": "NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight",
-            "2023postBPix": "NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight",
-            "2024": "NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight",
-        }
+        # get for each trigger flag in the workflow config, the proper trigger names 
+        # beware that the combination of working points must be available in the correction files
+        # for example, only tight ID and ISO are available to be combined with the tthMVA-Run3 promptMVA working point
+        for trigger_type in trigger_types:
+            
+            for trigger_flag in flags_with_triggernames[trigger_type].keys():
+                
+                trigger_names = trigger_flags[year_key][trigger_flag]
+                
+                for trigger_name in trigger_names:
+                    flags_with_triggernames[trigger_type][trigger_flag][trigger_name]["jsonkey"] = construct_trigger_NUMDEN_name(trigger_flag, trigger_name, self.year, id_wp, iso_wp, promptMVA_wp, hlt_paths)
 
-        if not ((id_wp == "tight") & (iso_wp == "tight")):
-            raise ValueError(
-                f"There are no muon HLT weights for id wp '{self.id_wp}' and iso wp '{self.iso_wp}' combination"
-            )
+                    legs = get_trigger_legs(trigger_name)
+                    cset_filepaths = get_cset_path(legs, trigger_type, self.year, id_wp, iso_wp, promptMVA_wp)
+                    legnumber = 1
+                    eff_types = ["mc", "data", "sf"]
+                    for leg in legs: 
+                        flags_with_triggernames[trigger_type][trigger_flag][trigger_name][f"jsonleg{legnumber}"] = legs[legnumber-1]
 
-        # get muons within SF binning
-        pt_lower_limit = 29.0 if self.year == "2017" else 26.0
-        muon_pt_mask = (self.flat_muons.pt > pt_lower_limit) & (
-            self.flat_muons.pt < 199.99
-        )
-        muon_eta_mask = np.abs(self.flat_muons.eta) < 2.399
+                        for eff_type in eff_types:
+                            print("cset_filepaths[eff_type]", cset_filepaths[eff_type])
+                            flags_with_triggernames[trigger_type][trigger_flag][trigger_name][f"cset_{eff_type}_filepath_leg{legnumber}"] = cset_filepaths[eff_type][legnumber-1]
+                        
+                        legnumber += 1
 
-        in_muons_mask = muon_pt_mask & muon_eta_mask
-        in_muons = self.flat_muons.mask[in_muons_mask]
+                    # hier berekening plaatsen van de scale factors -> we weten nu alle triggers die we moeten nemen
+                    # als enkel SingleMu, dan moeten we hier de berekening van voorheen doen
+                    # als enkel SingleEle opgegeven in config analoog aan enkel SingleMu
+                    # als zowel Single als Double -> combinatie van de trigger effs
+        # display final dictionary for checks:
+        display(JSON(json.loads(json.dumps(flags_with_triggernames))))
 
-        # get muons pT and abseta (replace None values with some 'in-limit' value)
-        muon_pt = ak.fill_none(in_muons.pt, 30.0)
-        muon_eta = ak.fill_none(in_muons.eta, 0)
-        muon_abseta = ak.fill_none(np.abs(in_muons.eta), 0)
+        # check what trigger types we have a trigger for in the workflow config
+        apply_triggertype = tree() # store in this dict/tree if we find triggers given in the workflow config: if so, trigger SFs are applied for that type
+        for trigger_type in flags_with_triggernames.keys():
+            print('trigger_type: ', trigger_type)
+            print("flags_with_triggernames[trigger_type].keys(): ", flags_with_triggernames[trigger_type].keys()) 
+            if flags_with_triggernames[trigger_type].keys() in [[], None] or flags_with_triggernames[trigger_type] == {}:
+                
+                print(f"WARNING: {trigger_type} does not have any triggers listed in the workflow config file.")
+                apply_triggertype[trigger_type] = False
+            else:
+                apply_triggertype[trigger_type] = True
+                if trigger_type == "Single Lepton Trigger":
+                    for trigger_flag in ["SingleMu", "SingleEle"]:
+                        if trigger_flag not in flags_with_triggernames[trigger_type].keys():
+                            print(f"WARNING: {trigger_flag} does not have any triggers listed in the workflow config file.")
+                            apply_triggertype[trigger_flag] = False
+                        else:
+                            apply_triggertype[trigger_flag] = True
+            print('apply_triggertype: ',  apply_triggertype[trigger_type])
+        display(JSON(json.loads(json.dumps(apply_triggertype))))
 
-        # for single muon events, compute SF from POG SF
-        # for double muon events, compute SF from data/mc muon hlt efficiencies
-        kind = "single" if ak.all(ak.num(self.muons) == 1) else "double"
+        # make a list of first 4 elements of values in apply_triggertype tree
+        apply_triggertype_list = list(apply_triggertype.values())[:4]
+        print(apply_triggertype_list)
+        match apply_triggertype_list:
+            case [True, True, True, False]:
+            # both SingleMu and SingleEle, but no double lepton trigger
+            # insert function form trigger.py for calculation of scale factor for SingleMu and SingleEle
+                print("")
+                
+            case [True, True, False, False]:
+            # only SingleMu and no double lepton trigger
+                print("Only SingleMu and no double lepton trigger provided. Applying the SingleMu trigger SF to all events with 1 or more muons.")
+                trigger_type = "Single Lepton Trigger"
+                trigger_flag = "SingleMu"
+                trigger_name = list(flags_with_triggernames[trigger_type][trigger_flag].keys())[0]
+                
+                for eff_type in eff_types:
+                    self.cset_eff[eff_type] = correctionlib.CorrectionSet.from_file(flags_with_triggernames[trigger_type][trigger_flag][trigger_name][f"cset_{eff_type}_filepath_leg1"])
+                    jsonkey = flags_with_triggernames[trigger_type][trigger_flag][trigger_name]["jsonkey"]
+                    
+                if not flags_with_triggernames[trigger_type][trigger_flag][trigger_name][f"cset_sf_filepath_leg1"] == "":
+                    has_sf_path = True
+                else:
+                    has_sf_path = False 
+                    
+                nominal_sf = calculate_SingleMu_SF(self.events, self.cset_eff, jsonkey, self.year, self.variation, has_sf_path)
+                
+                # geeft het problemen als je een empty string aan correctionSet.from_file geeft?
 
-        if kind == "single":
-            sf = self.cset[hlt_path_id_map[self.year]].evaluate(
-                muon_abseta, muon_pt, variation
-            )
-            nominal_sf = unflat_sf(sf, in_muons_mask, self.muons_counts)
+            case [True, False, True, False]:
+            # only SingleEle and no double lepton trigger
+                print("")
+            case [False, True]:
+            # only a double lepton trigger
+                print("Only a double lepton trigger was provided. Are you sure this is correct? At least one single lepton trigger is probably expected.")
+            case [True, True, True, True]:
+            # calculate scale factor for combination of SingleMu, SingleEle and double lepton
+                print('WARNING: Only the single and double lepton trigger scale factor application is implemented, so if you provided also triggers for more than 2 leptons, those efficiencies are not taken into account.')
+            case _:
+            # combining only SingleMu with a double lepton also not implemented yet, same for SingleEle -> still to be done
+                print('WARNING: A combination of triggers was provided for which the trigger scale factors / efficiencies are not available or for which the calculation is not yet implemented. No Trigger Scale Factors were applied.')
+                  #, True, True] | [False, False, True, True] | [False, True, False, True] | [False, False, False, True] | [False, True] | [False, True, True] | [False, False, True] | [False, True, False]:
+                # the case where there is no Single Lepton Trigger: first element False
+                print("aaah")
 
-        elif kind == "double":
-            data_eff = self.cset_eff["Muon-HLT-DataEff"].evaluate(
-                variation,
-                hlt_path_id_map[self.year],
-                muon_abseta if self.nano_version == "9" else muon_eta,
-                muon_pt,
-            )
-            data_eff = ak.where(in_muons_mask, data_eff, ak.ones_like(data_eff))
-            data_eff = ak.unflatten(data_eff, self.muons_counts)
-            data_eff_leading = ak.firsts(data_eff)
-            data_eff_subleading = ak.pad_none(data_eff, target=2)[:, 1]
-            full_data_eff = (
-                data_eff_leading
-                + data_eff_subleading
-                - data_eff_leading * data_eff_subleading
-            )
-            full_data_eff = ak.fill_none(full_data_eff, 1)
-
-            mc_eff = self.cset_eff["Muon-HLT-McEff"].evaluate(
-                variation,
-                hlt_path_id_map[self.year],
-                muon_abseta if self.nano_version == "9" else muon_eta,
-                muon_pt,
-            )
-            mc_eff = ak.where(in_muons_mask, mc_eff, ak.ones_like(mc_eff))
-            mc_eff = ak.unflatten(mc_eff, self.muons_counts)
-            mc_eff_leading = ak.firsts(mc_eff)
-            mc_eff_subleading = ak.pad_none(mc_eff, target=2)[:, 1]
-            full_mc_eff = (
-                mc_eff_leading + mc_eff_subleading - mc_eff_leading * mc_eff_subleading
-            )
-            full_mc_eff = ak.fill_none(full_mc_eff, 1)
-
-            nominal_sf = full_data_eff / full_mc_eff
+        # we actually want something with double leptons: so muon or electron. the code below is for applying the SingleMuon trigger SF for the combination of 2 muons 
 
         return nominal_sf
 

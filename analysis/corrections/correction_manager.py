@@ -54,6 +54,7 @@ def weight_manager(pruned_ev, year, dataset, workflow_config, variation="nominal
     # get nano version
     nano_version = get_nano_version(year)
     # add weights
+    print("adding weights")
     if hasattr(pruned_ev, "genWeight"):
         if weights_config["genWeight"]:
             weights_container.add("genweight", pruned_ev.genWeight)
@@ -95,6 +96,7 @@ def weight_manager(pruned_ev, year, dataset, workflow_config, variation="nominal
                     )
         if "muon" in weights_config:
             if weights_config["muon"]:
+                print("processing muon weights")
                 if "selected_muons" in pruned_ev.fields:
                     muon_weights = MuonWeights(
                         events=pruned_ev,
@@ -121,13 +123,28 @@ def weight_manager(pruned_ev, year, dataset, workflow_config, variation="nominal
                                 promptMVA_wp=weights_config["muon"]["promptMVA"],
                             )
                     if "trigger" in weights_config["muon"]:
+                        print("Trying to get trigger corrections")
+                        print("Trying to access muon trigger in weights_config")
                         if weights_config["muon"]["trigger"]:
-                            muon_weights.add_trigger_weights(
-                                dataset=dataset,
-                                id_wp=weights_config["muon"]["id"],
-                                iso_wp=weights_config["muon"]["iso"],
-                                hlt_paths=workflow_config.event_selection["hlt_paths"],
-                            )
+                            print("Muon trigger found in weights_config: adding trigger weights.")
+                            if "promptMVA" in weights_config["muon"]:
+                                print("promptMVA found in weights_config for muon.")
+                                muon_weights.add_trigger_weights(
+                                    dataset=dataset,
+                                    id_wp=weights_config["muon"]["id"],
+                                    iso_wp=weights_config["muon"]["iso"],
+                                    promptMVA_wp=weights_config["muon"]["promptMVA"],
+                                    hlt_paths=workflow_config.event_selection["hlt_paths"],
+                                )
+                            else:
+                                print("promptMVA NOT found in weights_config for muon. Setting promptMVA_wp for applying trigger weights to empty string")
+                                muon_weights.add_trigger_weights(
+                                    dataset=dataset,
+                                    id_wp=weights_config["muon"]["id"],
+                                    iso_wp=weights_config["muon"]["iso"],
+                                    promptMVA_wp="",
+                                    hlt_paths=workflow_config.event_selection["hlt_paths"],
+                                )                                
         if "electron" in weights_config:
             if weights_config["electron"]:
                 if "selected_electrons" in pruned_ev.fields:

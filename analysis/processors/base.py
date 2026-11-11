@@ -151,13 +151,16 @@ class BaseProcessor(processor.ProcessorABC):
             # get selection mask by category
             category_mask = selection_manager.all(*category_cuts)
             nevents_after = ak.sum(category_mask)
+            print("histogram filling")
             if nevents_after > 0:
+                print("nevents greater than 0")
                 # get pruned events
                 pruned_ev = events[category_mask]
                 # add each selected object to 'pruned_ev' as a new field
                 for obj in objects:
                     pruned_ev[f"selected_{obj}"] = objects[obj][category_mask]
                 # get weights container
+                print("using weight_manager")
                 weights_container = weight_manager(
                     pruned_ev=pruned_ev,
                     year=year,
