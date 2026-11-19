@@ -1,6 +1,12 @@
 # Corrections
 
-### Trigger Scale Factors / HLT weigths
+## Trigger Scale Factors / HLT weigths
+
+## How to add a new trigger or use a trigger calculayted with lepton WPs that are not implemented yet
+
+Info to be added.
+
+### Detailed explanation of what happens in the code
 For now, mainly two files in `analysis/corrections/` are used for this: `muon.py` and `trigger.py`. In `trigger.py` all the helper functions for applying the trigger scale factors are stored and in `muon.py` the actual scale factors are applied.
 Later, when combining with electron legs and electron trigger scale factors, it might be better to have one dedicated file for the triggers and move the content for the triggers fully in one file for electrons as well as muons. For now this is done in `muon.py`, so there we actually also look at electron scale factors. `electron.py` also still contains a part on applying Single Electron trigger scale factors, which eventually should be fully removed.
 
@@ -54,3 +60,18 @@ To get the trigger legs (`jsonlegs`), we split the name of the trigger at each u
 Beware that the working points for which the trigger scale factors are applied still need to be specified separately from the definition of the muon and electron object in the workflow config file.
 
 Now the trick is to get the correct the correct efficiency file attached to each leg and combine the legs, double and single lepton trigger efficiencies into one trigger efficiency data and one for mc and then one scale factor.
+
+
+Needs to be updated: now all trigger SF application code is in corrections/trigger.py + starting with electron SF application too.
+For electron trigger, originally no SFs for the case of nano_version 15 were applied (as 2024 SFs were not available yet). But I removed that, and let that be later found out in the weights calculation to avoid the application of SFs to be blocked for all possible trigger combinations and lepton WPs. Only the central POG SFs were not available yet, but that does not mean we do not have efficiencies, fro example for HWW working points that can be used to calculate Ele and MuEle trigger SFs. 
+
+new update in correction_manager: we check which lepton WPs are provided for the trigger/hlt correctins aka trigger SFs. If no WP is provided, that wp remains saved as an empty string for the trigger SF calculation. That is then further handled in the SF calculation. If muon or electron trigger correction is set to false in the workflow config, then also an empty string is saved for the wps of that particle. For muon, the expected WPs are id, iso and promptMVA and for electron only id and promptMVA. If one of them is elft out in the config file, that is no problem: it will be saved as an empty string. If you provide something else than that, that is a problem and requires some changes in the code to accomodate that.
+
+`get_available_SF_names_DEN()`contains a list for muon and electron with available denominators for each electron and muon WP and Nano versions 9, 12 and 15. It returns the denominator name for a particular particular and particular working point used for a trigger efficiency or SF.
+
+For Run 2 electron trigger efficiencies, the Data and MC eff are in different files than the SF. So, then we need to use the path in `electron_hlt` for the SFs, the path in `electron_hlt_mc_eff` for the MC trigger efficiency and the path in `electron_hlt_data_eff` for the Data trigger efficiency. Of course, if the HWW electron WP is used, those corresponding paths need to be used. They are however not implemented for Run 2 at the moment.
+
+To achieve this, in `get_cset_path` for the double lepton trigger, we loop over all legs, and first check what particle the leg has. If it is "electron", we check first whether we need to use electron HWW efficiency files. If not, we check whether the year is before 2022. If so, we use the Run 2 paths which are divided for Data eff, MC eff and SF in `electron_hlt_data_eff`, `electron_hlt_mc_eff` and `electron_hlt` in the correction_files. If that is not the case, then we use the default of just using `electron_hlt` for Data eff, MC eff and SF. 
+In case we need to use the HWW efficiency files `electron_hlt_HWW_mc_eff` is used for the MC eff and `electron_hlt_HWW_data_eff` for the Data eff. The SF is set to an empty string. This is analogous for the muon legs.
+
+For the POG electron trigger efficiency files, the jsonkey for electrons is constructed differently than for muons, but luckily the same for each electron SF, Data eff and MC eff. For example, you have HLT_SF_Ele30_LooseID. The first key in the json file does change though, depending on SF, Data eff or MC eff. You have "Electron-HLT-SF", "Electron-HLT-DataEff" and "Electron-HLT-McEff".
