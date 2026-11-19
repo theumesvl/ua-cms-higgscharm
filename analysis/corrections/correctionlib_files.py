@@ -111,6 +111,20 @@ correction_files = {
         "2017": f"{Path.cwd()}/analysis/data/electron_hlt/EGamma_HLT_DataEff_2017.json.gz",
         "2018": f"{Path.cwd()}/analysis/data/electron_hlt/EGamma_HLT_DataEff_2018.json.gz",
     },
+    "electron_hlt_HWW_mc_eff": { # for these, just the start of the path is given, as the trigger name is in the file name itself, not in the file
+        "2022preEE": f"{Path.cwd()}/analysis/data/electron_HWW_hlt/2022preEE/MC_eff/",
+        "2022postEE": f"{Path.cwd()}/analysis/data/electron_HWW_hlt/2022postEE/MC_eff/",
+        "2023preBPix": f"{Path.cwd()}/analysis/data/electron_HWW_hlt/2023preBPix/MC_eff/",
+        "2023postBPix": f"{Path.cwd()}/analysis/data/electron_HWW_hlt/2023postBPix/MC_eff/",
+        "2024": f"{Path.cwd()}/analysis/data/electron_HWW_hlt/2024/MC_eff/",
+    },
+    "electron_hlt_HWW_data_eff": { # for these, just the start of the path is given, as the trigger name is in the file name itself, not in the file
+        "2022preEE": f"{Path.cwd()}/analysis/data/electron_HWW_hlt/2022preEE/Data_eff/",
+        "2022postEE": f"{Path.cwd()}/analysis/data/electron_HWW_hlt/2022postEE/Data_eff/",
+        "2023preBPix": f"{Path.cwd()}/analysis/data/electron_HWW_hlt/2023preBPix/Data_eff/",
+        "2023postBPix": f"{Path.cwd()}/analysis/data/electron_HWW_hlt/2023postBPix/Data_eff/",
+        "2024": f"{Path.cwd()}/analysis/data/electron_HWW_hlt/2024/Data_eff/",
+    }
     "electron_ss": {
         "2022preEE": "/cvmfs/cms-griddata.cern.ch/cat/metadata/EGM/Run3-22CDSep23-Summer22-NanoAODv12/latest/electronSS_EtDependent.json.gz",
         "2022postEE": "/cvmfs/cms-griddata.cern.ch/cat/metadata/EGM/Run3-22EFGSep23-Summer22EE-NanoAODv12/latest/electronSS_EtDependent.json.gz",

@@ -54,6 +54,20 @@ def weight_manager(pruned_ev, year, dataset, workflow_config, variation="nominal
     weights_container = Weights(len(pruned_ev), storeIndividual=True)
     # get nano version
     nano_version = get_nano_version(year)
+    # prepare inputs for applying trigger scale factors
+    triggerSFs_leptonWP_inputs = {
+        "muon": {
+            "id": "",
+            "iso": "",
+            "promptMVA": "",
+        },
+        "electron": {
+            "id": "",
+            "promptMVA": "",
+        },
+    }
+    apply_lepton_triggerSF = False
+    triggerSF_particles = [] # list of all particles/objects for which to apply trigger SFs
     # add weights
     print("adding weights")
     if hasattr(pruned_ev, "genWeight"):
@@ -123,35 +137,20 @@ def weight_manager(pruned_ev, year, dataset, workflow_config, variation="nominal
                                 iso_wp=weights_config["muon"]["iso"],
                                 promptMVA_wp=weights_config["muon"]["promptMVA"],
                             )
-                    if "trigger" in weights_config["muon"]:
-                        trigger_weights = TriggerWeights(
-                            events=pruned_ev,
-                            year=year,
-                            variation=variation,
-                            weights=weights_container,
-                        )
-                        print("Trying to get trigger corrections")
-                        print("Trying to access muon trigger in weights_config")
+                    if "trigger" in weights_config["muon"]:                        
                         if weights_config["muon"]["trigger"]:
-                            print("Muon trigger found in weights_config: adding trigger weights.")
+                            print("Muon trigger found in weights_config: adding muon working points for trigger weights.")
+                            if "id" in weights_config["muon"]:
+                                triggerSFs_leptonWP_inputs["muon"]["id"] = weights_config["muon"]["id"]
+                            if "iso" in weights_config["muon"]:
+                                triggerSFs_leptonWP_inputs["muon"]["iso"] = weights_config["muon"]["iso"]
                             if "promptMVA" in weights_config["muon"]:
-                                print("promptMVA found in weights_config for muon.")
-                                trigger_weights.add_trigger_weights(
-                                    dataset=dataset,
-                                    id_wp=weights_config["muon"]["id"],
-                                    iso_wp=weights_config["muon"]["iso"],
-                                    promptMVA_wp=weights_config["muon"]["promptMVA"],
-                                    hlt_paths=workflow_config.event_selection["hlt_paths"],
-                                )
-                            else:
-                                print("promptMVA NOT found in weights_config for muon. Setting promptMVA_wp for applying trigger weights to empty string")
-                                trigger_weights.add_trigger_weights(
-                                    dataset=dataset,
-                                    id_wp=weights_config["muon"]["id"],
-                                    iso_wp=weights_config["muon"]["iso"],
-                                    promptMVA_wp="",
-                                    hlt_paths=workflow_config.event_selection["hlt_paths"],
-                                )                                
+                                triggerSFs_leptonWP_inputs["muon"]["promptMVA"] = weights_config["muon"]["promptMVA"]
+                                
+                            print("Setting 'apply lepton trigger SFs' to True.")
+                            apply_lepton_triggerSF = True
+                            triggerSF_particles.append("muon")
+                            
         if "electron" in weights_config:
             if weights_config["electron"]:
                 if "selected_electrons" in pruned_ev.fields:
@@ -184,27 +183,33 @@ def weight_manager(pruned_ev, year, dataset, workflow_config, variation="nominal
                             elif nano_version == "15":
                                 electron_weights.add_reco_weights("Reco20to75")
                                 electron_weights.add_reco_weights("RecoAbove75")
-                    if "trigger" in weights_config["electron"]: ### WIP #####
-                        trigger_weights = TriggerWeights(
-                            events=pruned_ev,
-                            year=year,
-                            variation=variation,
-                            weights=weights_container,
-                        ) ######################################
-                        if weights_config["electron"]["trigger"]:
-                            # no available HLT Sfs for 2024 yet
-                            if nano_version != "15":
-                                electron_weights.add_hlt_weights(
-                                    id_wp=weights_config["electron"]["id"],
-                                )
+                    if "trigger" in weights_config["electron"]:                          
+                        if weights_config["electron"]["trigger"]: 
+                            print("Electron trigger found in weights_config: adding electron working points for trigger weights.") 
+                            if "id" in weights_config["electron"]:
+                                triggerSFs_leptonWP_inputs["electron"]["id"] = weights_config["electron"]["id"]
+                            if "promptMVA" in weights_config["electron"]:
+                                triggerSFs_leptonWP_inputs["electron"]["promptMVA"] = weights_config["electron"]["promptMVA"]
+
+                            print("Setting 'apply lepton trigger SFs' to True.")
+                            apply_lepton_triggerSF = True  
+                            triggerSF_particles.append("electron")
+                            
         # trigger weights need to be applied when asked for for electrons and/muons #### WIP
-        """
-        if ("muon" in weights_config):
-            if weights_config["muon"]:
-                if "selected_muons" in pruned_ev.fields:      
-                    
-        elif ("electron" in weights_config):
-        """
+        if apply_lepton_triggerSF:
+            print("Trying to get trigger corrections.")
+            trigger_weights = TriggerWeights(
+                events=pruned_ev,
+                year=year,
+                variation=variation,
+                weights=weights_container,
+            )
+            trigger_weights.add_trigger_weights(
+                triggerSF_particles,
+                triggerSFs_leptonWP_inputs,
+                hlt_paths=workflow_config.event_selection["hlt_paths"],
+                dataset=dataset,
+            )
 
         if "ctagging" in weights_config:
             if weights_config["ctagging"]:
