@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Type
 from coffea.analysis_tools import Weights
 from analysis.filesets.utils import get_nano_version
-from analysis.corrections.utils import correction_files, unflat_sf, tree
+from analysis.corrections.utils import correction_files, tree
 from IPython.display import display, JSON
 
 class TriggerWeights:
@@ -565,12 +565,23 @@ class TriggerWeights:
             print(f"WARNING: provided trigger type {trigger_type} not recognized for retrieving correctionset path.")  
         return jsonfile_paths
     
-    def get_muons_in_SFbinning_mask(self):
+    def get_muons_in_SFbinning_mask(self, leg_particles):
         # gets mask for muons within SF binning
         # later we can change this to be automatically detected by scanning the json file
         if self.use_muon_HWW_files:
-            pt_lower_limit = 29.0 if self.year == "2017" else 5.0 # value not exactly known for 2017 or run 2
-            pt_upper_limit = 150.0
+            muons_for_legs = [particle for particle in leg_particles if particle == "muon"]
+
+            if len(muons_for_legs) == 1:
+                pt_lower_limit = 29.0 if self.year == "2017" else 5.0 # value not exactly known for 2017 or run 2
+                pt_upper_limit = 150.0
+                
+            elif len(muons_for_legs) == 2: 
+                pt_lower_limit = 29.0 if self.year == "2017" else 0.0 # value not exactly known for 2017 or run 2
+                pt_upper_limit = 200.0
+            else:
+                raise ValueError(
+                    f"Unknown number of muon legs '{len(muons_for_legs)}' for get_muons_in_SFbinning_mask for trigger SF."
+                )
             abseta_upper_limit = 2.4
         else:
             pt_lower_limit = 29.0 if self.year == "2017" else 26.0
@@ -584,7 +595,7 @@ class TriggerWeights:
     
         return in_muons_mask
 
-    def get_electrons_in_SFbinning_mask(self):
+    def get_electrons_in_SFbinning_mask(self, leg_particles):
         # gets mask for muons within SF binning
         # later we can change this to be automatically detected by scanning the json file
         pt_lower_limits = {
@@ -594,8 +605,18 @@ class TriggerWeights:
             "2018": 32.0,
         }
         if self.use_electron_HWW_files:
-            pt_lower_limit = 25.0 # not exactly known for run 2. still need to check if this is ok. This is just lower limit in json file, but not checked if also electron WP needs to be taken into account
-            pt_upper_limit = 200.0
+            
+            electrons_for_legs = [particle for particle in leg_particles if particle == "electron"]
+            if len(electrons_for_legs) == 1:
+                pt_lower_limit = 5.0 # not exactly known for run 2. still need to check if this is ok. This is just lower limit in json file, but not checked if also electron WP needs to be taken into account
+                pt_upper_limit = 80.0
+            elif len(electrons_for_legs) == 2: 
+                pt_lower_limit = 0.0 # not exactly known for run 2. still need to check if this is ok. This is just lower limit in json file, but not checked if also electron WP needs to be taken into account
+                pt_upper_limit = 200.0
+            else:
+                raise ValueError(
+                    f"Unknown number of electron legs '{len(electrons_for_legs)}' for get_electrons_in_SFbinning_mask for trigger SF."
+                )
             abseta_upper_limit = 2.5
             electron_pt_mask = (self.flat_electrons.pt > pt_lower_limit) & (self.flat_electrons.pt < pt_upper_limit)
             electron_eta_mask = np.abs(self.flat_electrons.eta) < abseta_upper_limit
@@ -617,7 +638,14 @@ class TriggerWeights:
         return in_electrons_mask
     
     def get_in_muons_kinematics(self, in_muons_mask):
-        # get muons pT and abseta (replace None values with some 'in-limit' value) from the muons in the SF binning
+        """
+        Get muons pT and (abs)eta (replace None values with some 'in-limit' value) from the muons in 
+        the SF binning. 
+        We set those None values here to a value inside the limits of the json files so the evaluate 
+        function does not error. Later on (not in this function), we take those values we get from 
+        evaluate and apply the mask again, to only apply the SFs to the actual muons that fulfilled 
+        the mask requirements.
+        """
         in_muons = self.flat_muons.mask[in_muons_mask]
         muon_pt = ak.fill_none(in_muons.pt, 30.0)
         muon_eta = ak.fill_none(in_muons.eta, 0)
@@ -625,7 +653,14 @@ class TriggerWeights:
         return muon_pt, muon_eta, muon_abseta
 
     def get_in_electrons_kinematics(self, in_electrons_mask):
-        # get electrons pT and abseta (replace None values with some 'in-limit' value)
+        """
+        Get electrons pT and (abs)eta (replace None values with some 'in-limit' value) from the 
+        muons in the SF binning. 
+        We set those None values here to a value inside the limits of the json files so the evaluate 
+        function does not error. Later on (not in this function), we take those values we get from 
+        evaluate and apply the mask again, to only apply the SFs to the actual electrons that 
+        fulfilled the mask requirements.
+        """
         run2_years  = ["2016preVFP", "2016postVFP", "2017", "2018"]
         in_electrons = self.flat_electrons.mask[in_electrons_mask]
         if self.year in run2_years:
@@ -653,10 +688,165 @@ class TriggerWeights:
             raise ValueError(f"Unknow efficiency type '{eff_type}' given to get_electron_variation_key.")
 
         return variation_key
+
+    def unflat_sf_singleLevent_singleLtrig(self, flat_sf: ak.Array, in_limit_mask: ak.Array, lepton_counts: ak.Array):
+        """
+        Get scale factors for in-limit objects (otherwise assign 1) for events with only one lepton.
+        When only single lepton tirgger SFs need to be applied.
+        Unflat array to original shape and multiply scale factors event-wise.
     
-    def calculate_SingleMu_SF(self, jsonkey, has_sf_path, variation):
+        Parameters:
+        -----------
+            flat_sf:
+                Array with 1D scale factors
+            in_limit_mask:
+                Array mask for events with objects within correction limits
+            lepton_counts:
+                Array with number of objects per event
+        """
+        # The input flat_sf can still contain NaN (or None/nan) and inf values
+       
+        # Look which events are in the in_limit mask and use the value from flat_sf for that. 
+        # For the others, the value in flat_sf is set to 1.
+        flat_sf = ak.where(in_limit_mask, flat_sf, ak.ones_like(flat_sf))
+        # unflatten the flat_sf using the number of leptons (which will here be either 0 or 1): 
+        # we then get an array, within that a list of values with length equal to the number of leptons  
+        sf = ak.unflatten(flat_sf, lepton_counts)
+        # now take the product of the values for the same event -> probably not necessary for triggers
+        sf = ak.prod(sf, axis=1)
+        # set None values to 1. Where do these None values come from? Already present in the json file?
+        sf = ak.fill_none(sf, value=1)
+        return sf
+    
+    def unflat_eff_nLevent_singleLtrig(
+        self,
+        n_muons,
+        n_electrons,
+        flat_eff_list,
+        in_limit_mask_list,
+        lepton_counts_list,
+    ):
+        """
+        Get efficiencies for in-limit objects for events with n (n >= 2) leptons.
+        When only single lepton trigger SFs need to be applied.
+        Unflat array to original shape and multiply efficiencies event-wise. 
+        It returns the full, total efficiency for n lepton events.
+
+        If all leptons fall outside the json limits, the efficiency is set to 1.
+        In case only one lepton falls within of the json limits, just the single lepton efficiency is returned.
+        In case only two leptons fall within of the json limits, just the double lepton efficiency is returned.
+        ...
+        
+        Parameters:
+        -----------
+            n_muons:
+                number of muons we expect in the event
+            n_electrons:
+                number of electrons we expect in the event
+            flat_eff_list:
+                list of max 2 arrays with 1D efficiencies: 1 for muons, 1 for electrons. 
+            in_limit_mask_list:
+                list of max 2 arrays with mask for events with objects within correction limits
+            lepton_counts:
+                list of max 2 arrays with number of objects per event
+            If no muons/electrons in event, no need to supply those arrays. 
+            For only muons/electrons, only one array needs to be given
+        """
+        # make sure the number of expected leptons matches with how many efficiencies, masks and lepton counts are provided
+        input_lengths = [
+            len(flat_eff_list),
+            len(in_limit_mask_list),
+            len(lepton_counts_list),
+        ]
+        if (n_muons != 0 and n_electrons != 0):
+            n_lepton_kinds = 2
+            
+        elif (n_muons != 0 and n_electrons == 0) or (n_muons == 0 and n_electrons != 0):
+            n_lepton_kinds = 1
+        else:
+            n_lepton_kinds = 0
+        if not input_lengths == [n_lepton_kinds]*3:
+            raise ValueError(
+                f"Expected {n_lepton_kinds} arrays in each input list, "
+                f"but received {input_lengths}."
+                f"Check the inputs provided for function 'unflat_eff_nLevent_singleLtrig'."
+            )
+        
+        muon_index = 0
+        electron_index = 1
+        # set correct index for muons and electrons for inputs
+        if n_muons == 0:
+            # if no muons, the input lists are only 1 long and have as element 0 the properties for electrons 
+            electron_index = 0
+        
+        muon_number = 1
+        electron_number = 1
+        full_eff = None
+        print("1st prints are for data_eff, next for mc_eff:")
+        if n_muons > 0:
+            # Exclude leptons outside the efficiency calculation's valid range. Set those leptons' eff to zero
+            print("in_limit_mask_list[muon_index]", in_limit_mask_list[muon_index][0:10])
+            print("flat_eff_list[muon_index]", flat_eff_list[muon_index][0:10])
+            print("lepton_counts_list[muon_index]", lepton_counts_list[muon_index][0:10])
+            
+            flat_eff_muons = ak.where(in_limit_mask_list[muon_index], flat_eff_list[muon_index], ak.zeros_like(flat_eff_list[muon_index])) 
+                # we need to set this to zero and not one as for 1 it would result in a total efficiency of 1 from the moment there is one out-of-limit value. We actually still want the nonzero efficiency to be applied when there is only one out-of-limit value.
+                # no check is performed whether lepton_counts[...] is larger than n_muons/n_leptons
+            # unflatten the flat_eff using the number of leptons in each event: 
+            # we then get an array, and within that, lists of values with length equal to the number of leptons
+            eff_muons = ak.unflatten(flat_eff_muons, lepton_counts_list[muon_index])
+            print("eff_muons after unflatten: ", eff_muons[0:10])
+            # add a None to all events that do not have n_muons/n_electrons elements in their list and replace each None by zero
+            eff_muons = ak.fill_none(ak.pad_none(eff_muons, target=n_muons), 0.0)
+            print("eff_muons after fill none with 0: ", eff_muons[0:10])
+    
+        if n_electrons > 0:
+            print("in_limit_mask_list[electron_index]", in_limit_mask_list[electron_index][0:10])
+            print("flat_eff_list[electron_index]", flat_eff_list[electron_index][0:10])
+            print("lepton_counts_list[electron_index]", lepton_counts_list[electron_index][0:10])
+            # analogous to the above muon case
+            flat_eff_electrons = ak.where(in_limit_mask_list[electron_index], flat_eff_list[electron_index], ak.zeros_like(flat_eff_list[electron_index])) 
+            eff_electrons = ak.unflatten(flat_eff_electrons, lepton_counts_list[electron_index])
+            print("eff_eles after unflatten: ", eff_electrons[0:10])
+            eff_electrons = ak.fill_none(ak.pad_none(eff_electrons, target=n_electrons), 0.0)
+            print("eff_eles after fill none with 0: ", eff_electrons[0:10])
+           
+        while muon_number <= n_muons:
+            # never executed when n_muons = 0, as muon_number already starts from 1
+            eff = eff_muons[:, muon_number-1]
+            if full_eff is None:
+                # for the first efficiency in the list, the full efficiency will initially be that efficiency 
+                full_eff = eff # take 1 muon efficiency out of the full list of muon effs per event
+            else:
+                # when other efficiencies (or at least 1) have already been added to the full_eff,
+                # add the additional efficiency. It corresponds to the formula: 
+                # full_eff = 1 - Prod_{i} ((1-eff_i)), which is the probability of at least one lepton 
+                # passing the trigger correspodning to the efficiency added for that lepton
+                full_eff = full_eff + eff - full_eff * eff
+            muon_number += 1
+    
+        while electron_number <= n_electrons:
+            # analogous to while loop for muons above
+            eff = eff_electrons[:, electron_number-1]
+            if full_eff is None:
+                full_eff = eff
+            else:
+                full_eff = full_eff + eff - full_eff * eff
+            electron_number += 1
+        
+        print("full_eff for after muon and electron calc for n leptons: ", full_eff[0:10])
+        all_zero = full_eff == 0
+        print("all_zero: ", all_zero[0:10])
+    
+        full_eff = ak.where(all_zero, 1.0, full_eff)        
+        print("full_eff after setting zeroes to 1: ", full_eff[0:10])
+        full_eff = ak.fill_none(full_eff, 1.0)
+        print("full_eff after filling None with 1: ", full_eff[0:10])
+        return full_eff
+    
+    def calculate_SingleMu_SF(self, jsonkey, has_sf_path, variation, leg_particles):
         particle = "muon"
-        in_muons_mask = self.get_muons_in_SFbinning_mask()
+        in_muons_mask = self.get_muons_in_SFbinning_mask(leg_particles)
         muon_pt, muon_eta, muon_abseta = self.get_in_muons_kinematics(in_muons_mask)
         
         kind = "single" if ak.all(self.muons_counts == 1) else "double"
@@ -692,45 +882,30 @@ class TriggerWeights:
                 cset_eff_sf_eval = self.cset_eff[particle]["sf"][jsonkey] # For the files with SF, only NUMDEN name needed
                 # if SF file is available, take SF straight from there
                 sf = cset_eff_sf_eval.evaluate(*evaluate_sf_inputlist) 
-                nominal_sf = unflat_sf(sf, in_muons_mask, self.muons_counts)  
+                nominal_sf = self.unflat_sf_singleLevent_singleLtrig(sf, in_muons_mask, self.muons_counts)  
             else:
                 # if SF file not available, calculate SF from data and mc efficiencies
                 data_eff = cset_eff_data_eval.evaluate(*evaluate_eff_inputlist)
                 mc_eff = cset_eff_mc_eval.evaluate(*evaluate_eff_inputlist)
 
                 sf = data_eff / mc_eff
-                nominal_sf = unflat_sf(sf, in_muons_mask, self.muons_counts) 
-        # for double (or more) muon events, always compute SF from data/mc muon hlt efficiencies. Calculation is limited to only 2 muons. For more than 2 muons, same 2 muon calculation is applied at the moment (needs to be changed probably, when actually using triggers with 3 or more legs)
+                nominal_sf = self.unflat_sf_singleLevent_singleLtrig(sf, in_muons_mask, self.muons_counts) 
+        # for double (or more) muon events, always compute SF from data/mc muon hlt efficiencies. Calculation is limited to only 2 muons. For more than 2 muons, an analogous calculation is actually implemented: it corresponds to adding just an extra fctor (1-eff) in the full efficiency = 1 - (1-eff_1)*(1-eff_2)*...*(1-eff_n) for n leptons.
         elif kind == "double":
             data_eff = cset_eff_data_eval.evaluate(*evaluate_eff_inputlist)
             mc_eff = cset_eff_mc_eval.evaluate(*evaluate_eff_inputlist)
-                
-            data_eff = ak.where(in_muons_mask, data_eff, ak.ones_like(data_eff))
-            data_eff = ak.unflatten(data_eff, self.muons_counts)
-            data_eff_leading = ak.firsts(data_eff)
-            data_eff_subleading = ak.pad_none(data_eff, target=2)[:, 1]
-            full_data_eff = (
-                data_eff_leading
-                + data_eff_subleading
-                - data_eff_leading * data_eff_subleading
-            )
-            full_data_eff = ak.fill_none(full_data_eff, 1)
-        
-            mc_eff = ak.where(in_muons_mask, mc_eff, ak.ones_like(mc_eff))
-            mc_eff = ak.unflatten(mc_eff, self.muons_counts)
-            mc_eff_leading = ak.firsts(mc_eff)
-            mc_eff_subleading = ak.pad_none(mc_eff, target=2)[:, 1]
-            full_mc_eff = (
-                mc_eff_leading + mc_eff_subleading - mc_eff_leading * mc_eff_subleading
-            )
-            full_mc_eff = ak.fill_none(full_mc_eff, 1)
-        
+            n_muons = 2
+            n_electrons = 0
+
+            full_data_eff = self.unflat_eff_nLevent_singleLtrig(n_muons, n_electrons, [data_eff], [in_muons_mask], [self.muons_counts])
+            full_mc_eff = self.unflat_eff_nLevent_singleLtrig(n_muons, n_electrons, [mc_eff], [in_muons_mask], [self.muons_counts])
+     
             nominal_sf = full_data_eff / full_mc_eff
         return nominal_sf
 
-    def calculate_SingleEle_SF(self, jsonkey, has_sf_path, variation):
+    def calculate_SingleEle_SF(self, jsonkey, has_sf_path, variation, leg_particles):
         particle = "electron"
-        in_electrons_mask = self.get_electrons_in_SFbinning_mask() 
+        in_electrons_mask = self.get_electrons_in_SFbinning_mask(leg_particles) 
         electron_pt, electron_eta = self.get_in_electrons_kinematics(in_electrons_mask)
 
         kind = "single" if ak.all(self.electrons_counts == 1) else "double"
@@ -784,38 +959,23 @@ class TriggerWeights:
                 cset_eff_sf_eval = self.cset_eff[particle]["sf"]["Electron-HLT-SF"]
                 # if SF file is available, take SF straight from there
                 sf = cset_eff_sf_eval.evaluate(*evaluate_sf_inputlist)
-                nominal_sf = unflat_sf(sf, in_electrons_mask, self.electrons_counts)  
+                nominal_sf = self.unflat_sf_singleLevent_singleLtrig(sf, in_electrons_mask, self.electrons_counts)  
             else:
                 # if SF file not available, calculate SF from data and mc efficiencies
                 data_eff = cset_eff_data_eval.evaluate(*evaluate_eff_inputlist)
                 mc_eff = cset_eff_mc_eval.evaluate(*evaluate_eff_inputlist)
 
                 sf = data_eff / mc_eff
-                nominal_sf = unflat_sf(sf, in_electrons_mask, self.electrons_counts) 
+                nominal_sf = self.unflat_sf_singleLevent_singleLtrig(sf, in_electrons_mask, self.electrons_counts) 
         # for double (or more) electron events, always compute SF from data/mc electron hlt efficiencies. Calculation is limited to only 2 electrons. For more than 2 electrons, same 2 electron calculation is applied at the moment (needs to be changed probably, when actually using triggers with 3 or more legs)
         elif kind == "double":
             data_eff = cset_eff_data_eval.evaluate(*evaluate_eff_inputlist)
             mc_eff = cset_eff_mc_eval.evaluate(*evaluate_eff_inputlist)
+            n_muons = 0
+            n_electrons = 2
                 
-            data_eff = ak.where(in_electrons_mask, data_eff, ak.ones_like(data_eff))
-            data_eff = ak.unflatten(data_eff, self.electrons_counts)
-            data_eff_leading = ak.firsts(data_eff)
-            data_eff_subleading = ak.pad_none(data_eff, target=2)[:, 1]
-            full_data_eff = (
-                data_eff_leading
-                + data_eff_subleading
-                - data_eff_leading * data_eff_subleading
-            )
-            full_data_eff = ak.fill_none(full_data_eff, 1)
-        
-            mc_eff = ak.where(in_electrons_mask, mc_eff, ak.ones_like(mc_eff))
-            mc_eff = ak.unflatten(mc_eff, self.electrons_counts)
-            mc_eff_leading = ak.firsts(mc_eff)
-            mc_eff_subleading = ak.pad_none(mc_eff, target=2)[:, 1]
-            full_mc_eff = (
-                mc_eff_leading + mc_eff_subleading - mc_eff_leading * mc_eff_subleading
-            )
-            full_mc_eff = ak.fill_none(full_mc_eff, 1)
+            full_data_eff = self.unflat_eff_nLevent_singleLtrig(n_muons, n_electrons, [data_eff], [in_electrons_mask], [self.electrons_counts])
+            full_mc_eff = self.unflat_eff_nLevent_singleLtrig(n_muons, n_electrons, [mc_eff], [in_electrons_mask], [self.electrons_counts])
         
             nominal_sf = full_data_eff / full_mc_eff
         return nominal_sf
@@ -890,14 +1050,14 @@ class TriggerWeights:
         print(f"List of particles for which to apply trigger SFs: {triggerSF_particles}")
             
         flags_with_triggernames = tree()
-        flags_with_triggernames = self.get_config_trigger_flags(hlt_paths) # get trigger flags listed in workflow config
+        flags_with_triggernames = self.get_config_trigger_flags(hlt_paths) # get trigger flags listed in workflow config - it gathers all triggers we want to apply SFs for and their necessary information to be able to apply the SFs
         trigger_flags = self.load_trigger_flags(Path(__file__)) # load file having for each year the trigger flag and corresponding trigger names
         year_key = self.get_yearkey_for_trigger_flags()
         trigger_types = flags_with_triggernames.keys() # types of trigger: single lepton trigger, double lepton trigger ... defined in analysis/corrections/trigger.py get_config_trigger_flags()
         
         # get for each trigger flag in the workflow config, the proper trigger names 
         # beware that the combination of working points must be available in the correction files
-        # for example, only tight ID and ISO are available to be combined with the tthMVA-Run3 promptMVA working point
+        # for example, only tight_HWW ID and ISO are available to be combined with the ttHMVA Run3 promptMVA working point
         for trigger_type in trigger_types:
             
             for trigger_flag in flags_with_triggernames[trigger_type].keys():
@@ -930,12 +1090,9 @@ class TriggerWeights:
                             flags_with_triggernames[trigger_type][trigger_flag][trigger_name][f"cset_{eff_type}_filepath_leg{legnumber}"] = cset_filepaths[leg_particle][eff_type][legnumber-1]
                         
                         legnumber += 1
-        
-                    # hier berekening plaatsen van de scale factors -> we weten nu alle triggers die we moeten nemen
-                    # als enkel SingleMu, dan moeten we hier de berekening van voorheen doen
-                    # als enkel SingleEle opgegeven in config analoog aan enkel SingleMu
+    
                     # als zowel Single als Double -> combinatie van de trigger effs
-        # display final dictionary for checks:
+        # display final dictionary for checks of correct path names:
         display(JSON(json.loads(json.dumps(flags_with_triggernames))))
         
         # check what trigger types we have a trigger for in the workflow config
@@ -971,7 +1128,7 @@ class TriggerWeights:
         match apply_triggertype_list:
             case [True, True, True, False]:
             # both SingleMu and SingleEle, but no double lepton trigger
-            # insert function form trigger.py for calculation of scale factor for SingleMu and SingleEle
+            # insert function from trigger.py for calculation of scale factor for SingleMu and SingleEle
                 print("")
                 
             case [True, True, False, False]:
@@ -996,8 +1153,8 @@ class TriggerWeights:
                     has_sf_path = True
                 else:
                     has_sf_path = False 
-                    
-                nominal_sf = self.calculate_SingleMu_SF(jsonkey, has_sf_path, variation)
+                legs, leg_particles = self.get_trigger_legs(trigger_name)
+                nominal_sf = self.calculate_SingleMu_SF(jsonkey, has_sf_path, variation, leg_particles)
                 
                 # geeft het problemen als je een empty string aan correctionSet.from_file geeft? Nee
         
@@ -1024,7 +1181,8 @@ class TriggerWeights:
                 else:
                     has_sf_path = False 
                     
-                nominal_sf = self.calculate_SingleEle_SF(jsonkey, has_sf_path, variation)
+                legs, leg_particles = self.get_trigger_legs(trigger_name)    
+                nominal_sf = self.calculate_SingleEle_SF(jsonkey, has_sf_path, variation, leg_particles)
             case [False, True]:
             # only a double lepton trigger
                 print("Only a double lepton trigger was provided. Are you sure this is correct? At least one single lepton trigger is probably expected.")

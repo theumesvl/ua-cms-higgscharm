@@ -167,24 +167,27 @@ correction_files = {
         "2024": "/cvmfs/cms-griddata.cern.ch/cat/metadata/BTV/Run3-24CDEReprocessingFGHIPrompt-Summer24-NanoAODv15/2025-08-19/ctagging.json.gz",
     },
 }
-
-
-def unflat_sf(sf: ak.Array, in_limit_mask: ak.Array, n: ak.Array):
+def unflat_sf(flat_sf: ak.Array, in_limit_mask: ak.Array, n: ak.Array):
     """
-    get scale factors for in-limit objects (otherwise assign 1).
-    Unflat array to original shape and multiply scale factors event-wise
+    Get scale factors for in-limit objects (otherwise assign 1).
+    Unflat array to original shape and multiply scale factors event-wise.
 
     Parameters:
     -----------
-        sf:
+        flat_sf:
             Array with 1D scale factors
         in_limit_mask:
             Array mask for events with objects within correction limits
         n:
             Array with number of objects per event
     """
-    sf = ak.where(in_limit_mask, sf, ak.ones_like(sf))
-    return ak.fill_none(ak.prod(ak.unflatten(sf, n), axis=1), value=1)
+    # look which events are in the in_limit mask and use the value from flat_sf for that. For the others, the value in flat_sf is set to 1.
+    flat_sf = ak.where(in_limit_mask, flat_sf, ak.ones_like(flat_sf))
+
+    # unflatten the flat_sf using the number of leptons (which will here be either 0 or 1): 
+    # we then get an array, within that a list of values with length equal to the number of leptons
+    sf = ak.fill_none(ak.prod(ak.unflatten(flat_sf, n), axis=1), value=1)
+    return sf
 
 def tree():
     return defaultdict(tree)
