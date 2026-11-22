@@ -75,3 +75,22 @@ To achieve this, in `get_cset_path` for the double lepton trigger, we loop over 
 In case we need to use the HWW efficiency files `electron_hlt_HWW_mc_eff` is used for the MC eff and `electron_hlt_HWW_data_eff` for the Data eff. The SF is set to an empty string. This is analogous for the muon legs.
 
 For the POG electron trigger efficiency files, the jsonkey for electrons is constructed differently than for muons, but luckily the same for each electron SF, Data eff and MC eff. For example, you have HLT_SF_Ele30_LooseID. The first key in the json file does change though, depending on SF, Data eff or MC eff. You have "Electron-HLT-SF", "Electron-HLT-DataEff" and "Electron-HLT-McEff".
+
+## About the formula used for calculating the trigger efficiencies and SFs
+
+In case we only apply SingleMu or SingleEle triggers, we have a special way of dealing with this. We still want to apply the scale factor to events with more than 1 electron or muon.
+In case of only one lepton it is easy: we just calculate the scale factor depending on the pt and eta of the lepton and use that as the total trigger SF for the event.
+In case of 2 leptons, it becomes more complicated. In that case, we always first calculate the efficiencies for Data and MC and calculate the scale factor as DataEff / McEff. We have 3 possibilities for calculating the total efficiencies:
+* 2 muons: add efficiency of both muons, but subtract the product of both efficiencies.
+* 2 electrons: add efficiency of both electrons, but subtract the product of both efficiencies.
+* 1 electron, 1 muon: add SingleMu efficiency and SingleEle efficiency, but subtract the product of both efficiencies.
+
+The reasoning behoind the first two formulas goes as follows:
+The total single lepton efficiency is the probability of 1 or both leptons passing the correct trigger requirements (as it is a **single** lepton trigger, only one lepton needs to pass). The individual efficiciencies for each lepton give the probability of the lepton passing the single lepton trigger. We can calculate the total trigger efficiency by subtracting the probability of both leptons not passing the trigger from 1. The probability of not passing the trigger for 1 lepton is 1 minus the single lepton trigger efficiency. Multiplying that for both leptons delivers the total probability for both leptons not passing the trigger. Hence, subtracting that from 1, we obtain the probability of all other options: either 1 or both leptons passing the single lepton trigger. Rewriting this formula by working out the product, leads to the formula in the itemization above. 
+You can interpret this formula also as: add the chance of the first lepton passing to that of the second lepton passing the trigger. But by doing only that, the option of both leptons passing is double-counted. Indeed: in the first term, included is then the option of the second lepton either passing the trigger or not, so there we have included the options of l1 and l2 passing, or l1 passing, but not l2. In the second term, we have something similar: included are l2 and l1 passing, or l2 passing, but not l1. So you see that, just by adding the two efficiencies, we include the probability of l1 and l2 passing at the same time twice. Hence we need to subtract it one time.
+Important to note here, is that we assume that the trigger decisions for each of the 2 leptons are independent of each other, i.e. they are not correlated.
+
+This is also the case for the 1 muon 1 electron case and the formula is in essence the same. The only difference is, is that the two efficiencies used are now different: one is the muon efficiency and one is the electron one. You could assign lepton labels to the efficiencies, but the values will be the same for both these cases:
+* l1 = muon, l2 = electron
+* l2 = muon, l1 = electron
+The important thing to realize here, and the reason why the formula is essentially the same as for the other double lepton event cases, is that the muon can only trigger the SingleMu trigger and the electron only the SingleEle trigger. Hence we do not need extra terms saying 'electron does not fulfill the SingleMu trigger' for example.
