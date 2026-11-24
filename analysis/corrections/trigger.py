@@ -843,7 +843,7 @@ class TriggerWeights:
         full_eff = ak.fill_none(full_eff, 1.0)
         print("full_eff after filling None with 1: ", full_eff[0:10])
         return full_eff
-    
+
     def calculate_SingleMu_SF(self, jsonkey, has_sf_path, variation, leg_particles):
         particle = "muon"
         in_muons_mask = self.get_muons_in_SFbinning_mask(leg_particles)
@@ -890,7 +890,7 @@ class TriggerWeights:
 
                 sf = data_eff / mc_eff
                 nominal_sf = self.unflat_sf_singleLevent_singleLtrig(sf, in_muons_mask, self.muons_counts) 
-        # for double (or more) muon events, always compute SF from data/mc muon hlt efficiencies. Calculation is limited to only 2 muons. For more than 2 muons, an analogous calculation is actually implemented: it corresponds to adding just an extra fctor (1-eff) in the full efficiency = 1 - (1-eff_1)*(1-eff_2)*...*(1-eff_n) for n leptons.
+        # for double (or more) muon events, always compute SF from data/mc muon hlt efficiencies. Calculation is limited to only 2 muons. For more than 2 muons, an analogous calculation is actually implemented: it corresponds to adding just an extra fctor (1-eff) in the full efficiency = 1 - (1-eff_1)*(1-eff_2)*...*(1-eff_n) for n leptons. However, below the n_muons is still set to 2 for safety.
         elif kind == "double":
             data_eff = cset_eff_data_eval.evaluate(*evaluate_eff_inputlist)
             mc_eff = cset_eff_mc_eval.evaluate(*evaluate_eff_inputlist)
@@ -926,7 +926,7 @@ class TriggerWeights:
             cset_eff_data_eval = self.cset_eff[particle]["data"]["Electron-HLT-DataEff"]
             cset_eff_mc_eval = self.cset_eff[particle]["mc"]["Electron-HLT-McEff"]
             year_map = {
-                "2016preVFP": "2016preVFP", # for Run 2 years, there is a json file per year, stored locally: no year_map needed #### we need to handle the retrieval of the scale factors / efficiencies different for that: only the NUMDEN name is necessary and it specifies HLT-SF, HLT-DataEff or HLT-McEff at the begining of the NUMDEN name. The locally stored Run 2 files only conatin the nominal Scale Factor value
+                "2016preVFP": "2016preVFP", # for Run 2 years, there is a json file per year, stored locally: no year_map needed #### we need to handle the retrieval of the scale factors / efficiencies different for that: only the NUMDEN name is necessary and it specifies HLT-SF, HLT-DataEff or HLT-McEff at the begining of the NUMDEN name. The locally stored Run 2 files only contain the nominal Scale Factor value
                 "2016postVFP": "2016postVFP",
                 "2017": "2017",
                 "2018": "2018",
@@ -967,7 +967,7 @@ class TriggerWeights:
 
                 sf = data_eff / mc_eff
                 nominal_sf = self.unflat_sf_singleLevent_singleLtrig(sf, in_electrons_mask, self.electrons_counts) 
-        # for double (or more) electron events, always compute SF from data/mc electron hlt efficiencies. Calculation is limited to only 2 electrons. For more than 2 electrons, same 2 electron calculation is applied at the moment (needs to be changed probably, when actually using triggers with 3 or more legs)
+        # for double (or more) electron events, always compute SF from data/mc electron hlt efficiencies. Calculation is limited to only 2 electrons. For more than 2 electrons, an analogous calculation is actually implemented: it corresponds to adding just an extra factor (1-eff) in the full efficiency = 1 - (1-eff_1)*(1-eff_2)*...*(1-eff_n) for n leptons. However, below the n_electrons is still set to 2 for safety.
         elif kind == "double":
             data_eff = cset_eff_data_eval.evaluate(*evaluate_eff_inputlist)
             mc_eff = cset_eff_mc_eval.evaluate(*evaluate_eff_inputlist)
@@ -980,8 +980,30 @@ class TriggerWeights:
             nominal_sf = full_data_eff / full_mc_eff
         return nominal_sf
     
-    def evaluate_trigger_efficiency(self):
-        return 0
+    def calculate_SingleMuSingleEle_SF(self, jsonkey_muon, jsonkey_electron, has_sf_path_muon, has_sf_path_electron, variation, leg_particles_muon, leg_particles_electron):
+        if self.year in ["2016postVFP", "2016postVFP", "2017", "2018"]:
+            print("WARNING: no implementation of retrieving SingleEle electron trigger SFs or efficiencies yet. Read comments in analysis/corrections/trigger.py in the calculate_SingleEle_SF function.")
+        kind_muon = "single" if ak.all(self.muons_counts == 1) else "double"
+        kind_electron = "single" if ak.all(self.electrons_counts == 1) else "double"
+        
+        # we use the calculate_SingleMu_SF or calculate_SingleEle_SF for all cases except when we have muons as well as electrons.
+        # we assume there is a maximal of 2 leptons in total, but the implementation actually works for more. 
+        # You just need to implement the n_muons and n_electrons with different numbers and make a distinction in the kind 
+        # Right now "double" corresponds to everything of 2 or more (if there is any event with 2 or more muons/electrons).
+        print("self.electrons_counts not zero: ", self.electrons_counts[self.electrons_counts != 0])
+        print("self.muons_counts not zero: ", self.muons_counts[self.muons_counts != 0])
+        if ak.all(self.electrons_counts == 0):
+            nominal_sf = self.calculate_SingleMu_SF(jsonkey_muon, has_sf_path_muon, variation, leg_particles_muon)
+        elif ak.all(self.muons_counts == 0):
+            nominal_sf = self.calculate_SingleEle_SF(jsonkey_electron, has_sf_path_electron, variation, leg_particles_electron)
+        else:
+            # implement perhaps a function that gather the necessary inputs for the evaulation of the cset_eff and those correct paths. Then I can use them here as well as in the other SingleLepton functions
+            # this would be for evaluate_eff_inputlist, evaluate_sf_inputlist
+            # and for cset_eff_sf_eval, cset_eff_data_eval, cset_eff_mc_eval
+            print("WARNING: no implementation yet.")
+
+        # perhaps set n_muons and n_electrons to 1 for safety still, even though for more is implemented
+        return nominal_sf
         
     def add_trigger_weights(self, triggerSF_particles, triggerSFs_leptonWP_inputs, hlt_paths, dataset):
         """
@@ -1129,7 +1151,61 @@ class TriggerWeights:
             case [True, True, True, False]:
             # both SingleMu and SingleEle, but no double lepton trigger
             # insert function from trigger.py for calculation of scale factor for SingleMu and SingleEle
-                print("")
+                print("Only SingleMu and SingleEle, but no double lepton trigger provided. Applying the SingleMu and SingleEle trigger SF to all events with 1 or more muons.")
+
+                #### WIP ####
+                # mss in de functie voor SingleMu en SingleEle gewoon loopen over muon en electron, dan voor trigger_flag uiteraard SingleMu of SingleEle gebruiken. Eventueel gewoon flags_with_triggernames geheel meegeven als input
+                # haal daar dan voor elk eff_type het juiste filepath. update cset_eff
+                # haal de jsonkey op, die is hier ook telkens weer js
+                particle = "muon"
+                trigger_type = "Single Lepton Trigger"
+                trigger_flag_muon = "SingleMu"
+                trigger_name_muon = list(flags_with_triggernames[trigger_type][trigger_flag_muon].keys())[0]
+                
+                for eff_type in eff_types:
+                    filepath = flags_with_triggernames[trigger_type][trigger_flag_muon][trigger_name_muon][
+                        f"cset_{eff_type}_filepath_leg1"
+                    ]
+                
+                    if filepath:
+                        self.cset_eff[particle][eff_type] = correctionlib.CorrectionSet.from_file(filepath)
+                    
+                jsonkey_muon = flags_with_triggernames[trigger_type][trigger_flag_muon][trigger_name_muon]["jsonkey1"]
+                
+                if not flags_with_triggernames[trigger_type][trigger_flag_muon][trigger_name_muon][f"cset_sf_filepath_leg1"] == "":
+                    has_sf_path_muon = True
+                else:
+                    has_sf_path_muon = False 
+
+                
+                legs_muon, leg_particles_muon = self.get_trigger_legs(trigger_name_muon)
+
+                particle = "electron"
+                trigger_type = "Single Lepton Trigger"
+                trigger_flag_electron = "SingleEle"
+                trigger_name_electron = list(flags_with_triggernames[trigger_type][trigger_flag_electron].keys())[0]
+                
+                for eff_type in eff_types:
+                    filepath = flags_with_triggernames[trigger_type][trigger_flag_electron][trigger_name_electron][
+                        f"cset_{eff_type}_filepath_leg1"
+                    ]
+                
+                    if filepath:
+                        self.cset_eff[particle][eff_type] = correctionlib.CorrectionSet.from_file(filepath)
+                    
+                jsonkey_electron = flags_with_triggernames[trigger_type][trigger_flag_electron][trigger_name_electron]["jsonkey1"]
+                
+                if not flags_with_triggernames[trigger_type][trigger_flag_electron][trigger_name_electron][f"cset_sf_filepath_leg1"] == "":
+                    has_sf_path_electron = True
+                else:
+                    has_sf_path_electron = False 
+
+                
+                legs_electron, leg_particles_electron = self.get_trigger_legs(trigger_name_electron)
+                
+                nominal_sf = self.calculate_SingleMuSingleEle_SF(jsonkey_muon, jsonkey_electron, has_sf_path_muon, has_sf_path_electron, variation, leg_particles_muon, leg_particles_electron) 
+
+                ##########
                 
             case [True, True, False, False]:
             # only SingleMu and no double lepton trigger
@@ -1148,15 +1224,13 @@ class TriggerWeights:
                         self.cset_eff[particle][eff_type] = correctionlib.CorrectionSet.from_file(filepath)
                     
                 jsonkey = flags_with_triggernames[trigger_type][trigger_flag][trigger_name]["jsonkey1"]
-                    #display(JSON(json.loads(json.dumps(self.cset_eff))))
+
                 if not flags_with_triggernames[trigger_type][trigger_flag][trigger_name][f"cset_sf_filepath_leg1"] == "":
                     has_sf_path = True
                 else:
                     has_sf_path = False 
                 legs, leg_particles = self.get_trigger_legs(trigger_name)
                 nominal_sf = self.calculate_SingleMu_SF(jsonkey, has_sf_path, variation, leg_particles)
-                
-                # geeft het problemen als je een empty string aan correctionSet.from_file geeft? Nee
         
             case [True, False, True, False]:
             # only SingleEle and no double lepton trigger
