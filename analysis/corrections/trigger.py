@@ -924,6 +924,10 @@ class TriggerWeights:
         return cset_eff_data_eval, cset_eff_mc_eval, evaluate_eff_inputlist, evaluate_sf_inputlist
 
     def calculate_SingleMu_SF(self, jsonkey, has_sf_path, variation, leg_particles):
+        """
+        Calculation of trigger SFs in case of workflow config asking to take into account muon trigger SFs 
+        and when only SingleMu trigger flag provided.
+        """
         particle = "muon"
         in_muons_mask = self.get_muons_in_SFbinning_mask(leg_particles)
         muon_pt, muon_eta, muon_abseta = self.get_in_muons_kinematics(in_muons_mask)
@@ -950,7 +954,7 @@ class TriggerWeights:
 
                 sf = data_eff / mc_eff
             nominal_sf = self.unflat_sf_singleLevent_singleLtrig(sf, in_muons_mask, self.muons_counts) 
-        # for double (or more) muon events, always compute SF from data/mc muon hlt efficiencies. Calculation is limited to only 2 muons. For more than 2 muons, an analogous calculation is actually implemented: it corresponds to adding just an extra fctor (1-eff) in the full efficiency = 1 - (1-eff_1)*(1-eff_2)*...*(1-eff_n) for n leptons. However, below the n_muons is still set to 2 for safety.
+        # for double (or more) muon events, always compute SF from data/mc muon hlt efficiencies. Calculation is limited to only 2 muons. For more than 2 muons, an analogous calculation is actually implemented: it corresponds to adding just an extra factor (1-eff) in the full efficiency = 1 - (1-eff_1)*(1-eff_2)*...*(1-eff_n) for n leptons. However, below the n_muons is still set to 2 for safety.
         elif kind == "double":
             data_eff = cset_eff_data_eval.evaluate(*evaluate_eff_inputlist)
             mc_eff = cset_eff_mc_eval.evaluate(*evaluate_eff_inputlist)
@@ -964,6 +968,10 @@ class TriggerWeights:
         return nominal_sf
 
     def calculate_SingleEle_SF(self, jsonkey, has_sf_path, variation, leg_particles):
+        """
+        Calculation of trigger SFs in case of workflow config asking to take into account electron trigger SFs 
+        and when only SingleEle trigger flag provided.
+        """
         particle = "electron"
         in_electrons_mask = self.get_electrons_in_SFbinning_mask(leg_particles) 
         electron_pt, electron_eta = self.get_in_electrons_kinematics(in_electrons_mask)
@@ -1008,6 +1016,10 @@ class TriggerWeights:
         return nominal_sf
     
     def calculate_SingleMuSingleEle_SF(self, jsonkey_muon, jsonkey_electron, has_sf_path_muon, has_sf_path_electron, variation, leg_particles_muon, leg_particles_electron):
+        """
+        Calculation of trigger SFs in case of workflow config asking to take into account muon and electron trigger SFs 
+        and when only SingleMu and SingleEle trigger flags are provided.
+        """
         if self.year in ["2016postVFP", "2016postVFP", "2017", "2018"]:
             print("WARNING: no implementation of retrieving SingleEle electron trigger SFs or efficiencies yet. Read comments in analysis/corrections/trigger.py in the calculate_SingleEle_SF function.")
         kind_muon = "single" if ak.all(self.muons_counts == 1) else "double"
@@ -1024,12 +1036,56 @@ class TriggerWeights:
         elif ak.all(self.muons_counts == 0):
             nominal_sf = self.calculate_SingleEle_SF(jsonkey_electron, has_sf_path_electron, variation, leg_particles_electron)
         else:
-            # implement perhaps a function that gather the necessary inputs for the evaulation of the cset_eff and those correct paths. Then I can use them here as well as in the other SingleLepton functions
-            # this would be for evaluate_eff_inputlist, evaluate_sf_inputlist
-            # and for cset_eff_sf_eval, cset_eff_data_eval, cset_eff_mc_eval
-            print("WARNING: no implementation yet.")
+            # case where we have ùixed lepton flavours in at least one event
+            # written for 1 muon 1 electron events, but also handles other cases (although better to check for those)
 
-        # perhaps set n_muons and n_electrons to 1 for safety still, even though for more is implemented
+            # muon variables 
+            in_muons_mask = self.get_muons_in_SFbinning_mask(leg_particles_muon)
+            muon_pt, muon_eta, muon_abseta = self.get_in_muons_kinematics(in_muons_mask)
+            cset_eff_data_eval_muon, cset_eff_mc_eval_muon, evaluate_eff_inputlist_muon, evaluate_sf_inputlist_muon = self.get_inputlist_and_cset_eff(
+                "muon", 
+                jsonkey_muon,
+                variation,
+                muon_pt, muon_eta, muon_abseta,
+            )
+
+            # electron variables 
+            in_electrons_mask = self.get_electrons_in_SFbinning_mask(leg_particles_electron) 
+            electron_pt, electron_eta = self.get_in_electrons_kinematics(in_electrons_mask)
+            cset_eff_data_eval_electron, cset_eff_mc_eval_electron, evaluate_eff_inputlist_electron, evaluate_sf_inputlist_electron = self.get_inputlist_and_cset_eff(
+                "electron", 
+                jsonkey_electron,
+                variation,
+                electron_pt, electron_eta
+            )
+
+            # get efficiencies
+            n_muons = 1
+            n_electrons = 1
+            
+            data_eff_muon = cset_eff_data_eval_muon.evaluate(*evaluate_eff_inputlist_muon)
+            mc_eff_muon = cset_eff_mc_eval_muon.evaluate(*evaluate_eff_inputlist_muon)
+            data_eff_electron = cset_eff_data_eval_electron.evaluate(*evaluate_eff_inputlist_electron)
+            mc_eff_electron = cset_eff_mc_eval_electron.evaluate(*evaluate_eff_inputlist_electron)
+    
+            # for double (or more) lepton events, always compute SF from data/mc muon hlt efficiencies. Calculation is limited to only 2 leptons. For more than 2 leptons, an analogous calculation is actually implemented: it corresponds to adding just an extra factor (1-eff) in the full efficiency = 1 - (1-eff_1)*(1-eff_2)*...*(1-eff_n) for n leptons. However, above the n_muons and n_electrons are still set to 1 for safety.
+            full_data_eff = self.unflat_eff_nLevent_singleLtrig(
+                n_muons, 
+                n_electrons, 
+                [data_eff_muon, data_eff_electron], 
+                [in_muons_mask, in_electrons_mask], 
+                [self.muons_counts, self.electrons_counts]
+            )
+            full_mc_eff = self.unflat_eff_nLevent_singleLtrig(
+                n_muons, 
+                n_electrons, 
+                [mc_eff_muon, mc_eff_electron], 
+                [in_muons_mask, in_electrons_mask], 
+                [self.muons_counts, self.electrons_counts]
+            )
+         
+            nominal_sf = full_data_eff / full_mc_eff            
+
         return nominal_sf
         
     def add_trigger_weights(self, triggerSF_particles, triggerSFs_leptonWP_inputs, hlt_paths, dataset):
