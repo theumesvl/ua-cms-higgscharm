@@ -844,6 +844,85 @@ class TriggerWeights:
         print("full_eff after filling None with 1: ", full_eff[0:10])
         return full_eff
 
+    def get_inputlist_and_cset_eff(self, particle, jsonkey, variation, pt, eta, abseta = []):
+        """
+        Returns the list of inputs used to evaluate the efficiency / scale factor as well as what cset_eff to use for the evaluation.
+        By cset_eff, we mean both the cset_eff_data/mc_eval. 
+        cset_eff_sf_eval is set elsewhere, depending on whether a sf value is available (has_sf_path == True).
+        The input lists returned are both evaluate_eff_inputlist for data and mc eff and evaluate_sf_inputlist for sf.
+        """
+        if particle == "muon":    
+            if self.use_muon_HWW_files:   
+                cset_eff_data_eval = self.cset_eff[particle]["data"][jsonkey]
+                cset_eff_mc_eval = self.cset_eff[particle]["mc"][jsonkey]
+                evaluate_eff_inputlist = [        
+                    abseta if self.nano_version == "9" else eta,
+                    pt,
+                    variation,
+                ]
+                evaluate_sf_inputlist = evaluate_eff_inputlist
+            else:
+                cset_eff_data_eval = self.cset_eff[particle]["data"]["Muon-HLT-DataEff"]
+                cset_eff_mc_eval = self.cset_eff[particle]["mc"]["Muon-HLT-McEff"]
+                 
+                evaluate_eff_inputlist = [        
+                    variation,
+                    jsonkey,
+                    abseta if self.nano_version == "9" else eta,
+                    pt,
+                ]
+                evaluate_sf_inputlist = [        
+                    abseta if self.nano_version == "9" else eta,
+                    pt,
+                    variation,
+                ]
+        elif particle == "electron":
+            if self.use_electron_HWW_files:   
+                cset_eff_data_eval = self.cset_eff[particle]["data"][jsonkey]
+                cset_eff_mc_eval = self.cset_eff[particle]["mc"][jsonkey]
+                evaluate_eff_inputlist = [        
+                    eta,
+                    pt,
+                    variation,
+                ]
+                evaluate_sf_inputlist = evaluate_eff_inputlist
+            else: 
+                cset_eff_data_eval = self.cset_eff[particle]["data"]["Electron-HLT-DataEff"]
+                cset_eff_mc_eval = self.cset_eff[particle]["mc"]["Electron-HLT-McEff"]
+                year_map = {
+                    "2016preVFP": "2016preVFP", # for Run 2 years, there is a json file per year, stored locally: no year_map needed #### we need to handle the retrieval of the scale factors / efficiencies different for that: only the NUMDEN name is necessary and it specifies HLT-SF, HLT-DataEff or HLT-McEff at the begining of the NUMDEN name. The locally stored Run 2 files only contain the nominal Scale Factor value
+                    "2016postVFP": "2016postVFP",
+                    "2017": "2017",
+                    "2018": "2018",
+                    "2022postEE": "2022Re-recoE+PromptFG",
+                    "2022preEE": "2022Re-recoBCD",
+                    "2023preBPix": "2023PromptC",
+                    "2023postBPix": "2023PromptD",
+                    "2024": "2024Prompt",
+                }
+                variation_key_sf = self.get_electron_variation_key(variation, "sf")
+                variation_key_eff = self.get_electron_variation_key(variation, "eff")
+                evaluate_eff_inputlist = [ 
+                    year_map[self.year],
+                    variation_key_eff,
+                    jsonkey, 
+                    eta,
+                    pt,
+                ]
+                
+                evaluate_sf_inputlist = [ 
+                    year_map[self.year],
+                    variation_key_sf,
+                    jsonkey, 
+                    eta,
+                    pt,
+                ]
+        else:
+            raise ValueError(
+                f"Unknown particle: only muon and electron accepted for function 'get_inputlist_and_cset_eff'."
+            )
+        return cset_eff_data_eval, cset_eff_mc_eval, evaluate_eff_inputlist, evaluate_sf_inputlist
+
     def calculate_SingleMu_SF(self, jsonkey, has_sf_path, variation, leg_particles):
         particle = "muon"
         in_muons_mask = self.get_muons_in_SFbinning_mask(leg_particles)
@@ -852,44 +931,25 @@ class TriggerWeights:
         kind = "single" if ak.all(self.muons_counts == 1) else "double"
         # for single muon events, take/calculate SF from POG if possible
         # for WPs not available from POG, we use privatly derived or HWW efficiencies to calculate SF
-        if self.use_muon_HWW_files:   
-            cset_eff_data_eval = self.cset_eff[particle]["data"][jsonkey]
-            cset_eff_mc_eval = self.cset_eff[particle]["mc"][jsonkey]
-            evaluate_eff_inputlist = [        
-                muon_abseta if self.nano_version == "9" else muon_eta,
-                muon_pt,
-                variation,
-            ]
-            evaluate_sf_inputlist = evaluate_eff_inputlist
-        else:
-            cset_eff_data_eval = self.cset_eff[particle]["data"]["Muon-HLT-DataEff"]
-            cset_eff_mc_eval = self.cset_eff[particle]["mc"]["Muon-HLT-McEff"]
-             
-            evaluate_eff_inputlist = [        
-                variation,
-                jsonkey,
-                muon_abseta if self.nano_version == "9" else muon_eta,
-                muon_pt,
-            ]
-            evaluate_sf_inputlist = [        
-                muon_abseta if self.nano_version == "9" else muon_eta,
-                muon_pt,
-                variation,
-            ]
+        cset_eff_data_eval, cset_eff_mc_eval, evaluate_eff_inputlist, evaluate_sf_inputlist = self.get_inputlist_and_cset_eff(
+            particle, 
+            jsonkey,
+            variation,
+            muon_pt, muon_eta, muon_abseta,
+        )
             
         if kind == "single":
             if has_sf_path:
                 cset_eff_sf_eval = self.cset_eff[particle]["sf"][jsonkey] # For the files with SF, only NUMDEN name needed
                 # if SF file is available, take SF straight from there
                 sf = cset_eff_sf_eval.evaluate(*evaluate_sf_inputlist) 
-                nominal_sf = self.unflat_sf_singleLevent_singleLtrig(sf, in_muons_mask, self.muons_counts)  
             else:
                 # if SF file not available, calculate SF from data and mc efficiencies
                 data_eff = cset_eff_data_eval.evaluate(*evaluate_eff_inputlist)
                 mc_eff = cset_eff_mc_eval.evaluate(*evaluate_eff_inputlist)
 
                 sf = data_eff / mc_eff
-                nominal_sf = self.unflat_sf_singleLevent_singleLtrig(sf, in_muons_mask, self.muons_counts) 
+            nominal_sf = self.unflat_sf_singleLevent_singleLtrig(sf, in_muons_mask, self.muons_counts) 
         # for double (or more) muon events, always compute SF from data/mc muon hlt efficiencies. Calculation is limited to only 2 muons. For more than 2 muons, an analogous calculation is actually implemented: it corresponds to adding just an extra fctor (1-eff) in the full efficiency = 1 - (1-eff_1)*(1-eff_2)*...*(1-eff_n) for n leptons. However, below the n_muons is still set to 2 for safety.
         elif kind == "double":
             data_eff = cset_eff_data_eval.evaluate(*evaluate_eff_inputlist)
@@ -913,46 +973,13 @@ class TriggerWeights:
         # for WPs not available from POG, we use privatly derived or HWW efficiencies to calculate SF
         if self.year in ["2016postVFP", "2016postVFP", "2017", "2018"]:
             print("WARNING: no implementation of retrieving SingleEle electron trigger SFs or efficiencies yet. Read comments in analysis/corrections/trigger.py in the calculate_SingleEle_SF function.")
-        if self.use_electron_HWW_files:   
-            cset_eff_data_eval = self.cset_eff[particle]["data"][jsonkey]
-            cset_eff_mc_eval = self.cset_eff[particle]["mc"][jsonkey]
-            evaluate_eff_inputlist = [        
-                electron_eta,
-                electron_pt,
-                variation,
-            ]
-            evaluate_sf_inputlist = evaluate_eff_inputlist
-        else: 
-            cset_eff_data_eval = self.cset_eff[particle]["data"]["Electron-HLT-DataEff"]
-            cset_eff_mc_eval = self.cset_eff[particle]["mc"]["Electron-HLT-McEff"]
-            year_map = {
-                "2016preVFP": "2016preVFP", # for Run 2 years, there is a json file per year, stored locally: no year_map needed #### we need to handle the retrieval of the scale factors / efficiencies different for that: only the NUMDEN name is necessary and it specifies HLT-SF, HLT-DataEff or HLT-McEff at the begining of the NUMDEN name. The locally stored Run 2 files only contain the nominal Scale Factor value
-                "2016postVFP": "2016postVFP",
-                "2017": "2017",
-                "2018": "2018",
-                "2022postEE": "2022Re-recoE+PromptFG",
-                "2022preEE": "2022Re-recoBCD",
-                "2023preBPix": "2023PromptC",
-                "2023postBPix": "2023PromptD",
-                "2024": "2024Prompt",
-            }
-            variation_key_sf = self.get_electron_variation_key(variation, "sf")
-            variation_key_eff = self.get_electron_variation_key(variation, "eff")
-            evaluate_eff_inputlist = [ 
-                year_map[self.year],
-                variation_key_eff,
-                jsonkey, 
-                electron_eta,
-                electron_pt,
-            ]
-            
-            evaluate_sf_inputlist = [ 
-                year_map[self.year],
-                variation_key_sf,
-                jsonkey, 
-                electron_eta,
-                electron_pt,
-            ]
+
+        cset_eff_data_eval, cset_eff_mc_eval, evaluate_eff_inputlist, evaluate_sf_inputlist = self.get_inputlist_and_cset_eff(
+            particle, 
+            jsonkey,
+            variation,
+            electron_pt, electron_eta
+        )
 
         if kind == "single":
             if has_sf_path:
